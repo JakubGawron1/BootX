@@ -1,0 +1,37 @@
+{
+    "authors": [
+        "VisualDevelopment"
+    ],
+    "copyright": "Copyright © 2021, VisualDevelopment",
+    "description": "UEFI boot-loader",
+    "license": "proprietary",
+    "dflags-ldc": [
+        "-boundscheck=off",
+        "-nogc",
+        "-platformlib=",
+        "-defaultlib=",
+        "-debuglib=",
+        "-code-model=large",
+        "-betterC",
+        "-shared",
+        "-preview=all"
+    ],
+    "lflags-ldc": [
+        "/entry:fwMain",
+        "/dll",
+        "/subsystem:EFI_APPLICATION",
+        "/nodefaultlib"
+    ],
+    "dependencies": {
+        "uefilib": "0.1.0"
+    },
+    "buildRequirements": ["disallowDeprecations"],
+    "buildOptions": ["betterC"],
+    "name": "fwlauncher",
+    "sourcePaths": [
+        "Source"
+    ],
+    "targetName": "BOOTX64.EFI",
+    "targetPath": "Build",
+    "targetType": "executable"
+}
