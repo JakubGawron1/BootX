@@ -23,11 +23,12 @@
         "/nodefaultlib"
     ],
     "dependencies": {
-        "uefilib": "0.1.0"
+        "UEFILib": "0.1.0",
+        "Gunpowder": "0.1.0"
     },
     "buildRequirements": ["disallowDeprecations"],
     "buildOptions": ["betterC"],
-    "name": "fwlauncher",
+    "name": "FWLauncher",
     "sourcePaths": [
         "Source"
     ],
