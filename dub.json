@@ -17,7 +17,7 @@
         "-preview=all"
     ],
     "lflags-ldc": [
-        "/entry:fwMain",
+        "/entry:FWLMain",
         "/dll",
         "/subsystem:EFI_APPLICATION",
         "/nodefaultlib"
