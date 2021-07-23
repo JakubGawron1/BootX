@@ -1,0 +1,1 @@
+pub const assert = @import("assert.zig").assert;

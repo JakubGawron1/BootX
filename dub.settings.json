@@ -1,4 +1,0 @@
-{
-    "defaultCompiler": "ldc2",
-    "defaultArchitecture": "x86_64-unknown-windows-coff"
-}
