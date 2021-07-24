@@ -42,12 +42,12 @@ pub fn main() void {
     _ = system_table.con_out.?.outputString(w("Welcome!\n\r"));
 
     // Open ESP
-    var image: *uefi.protocols.LoadedImageProtocol = undefined;
+    var image: ?*uefi.protocols.LoadedImageProtocol = undefined;
+    var fs: ?*uefi.protocols.SimpleFileSystemProtocol = undefined;
+    var esp: ?*uefi.protocols.FileProtocol = undefined;
     assert(boot_services.handleProtocol(uefi.handle, &uefi.protocols.LoadedImageProtocol.guid, @ptrCast(*?*c_void, &image)), "Unable to open image info.", @src());
-    var fs: *uefi.protocols.SimpleFileSystemProtocol = undefined;
-    assert(boot_services.handleProtocol(image.device_handle.?, &uefi.protocols.SimpleFileSystemProtocol.guid, @ptrCast(*?*c_void, &fs)), "Unable to open filesystem", @src());
-    var esp: *uefi.protocols.FileProtocol = undefined;
-    assert(fs.openVolume(&esp), "Unable to open volume.", @src());
+    assert(boot_services.handleProtocol(image.?.device_handle.?, &uefi.protocols.SimpleFileSystemProtocol.guid, @ptrCast(*?*c_void, &fs)), "Unable to open filesystem", @src());
+    assert(fs.?.openVolume(&esp.?), "Unable to open volume.", @src());
 
     // Find ACPI pointer
     if (findCfgTable(uefi.tables.ConfigurationTable.acpi_20_table_guid)) |_| {
@@ -60,9 +60,9 @@ pub fn main() void {
     _ = system_table.con_out.?.outputString(w("Exiting boot services..."));
     var mem_map_size: usize = 0;
     var mem_map: [*]uefi.tables.MemoryDescriptor = undefined;
-    var map_key: usize = undefined;
-    var desc_size: usize = undefined;
-    var desc_ver: u32 = undefined;
+    var map_key: usize = 0;
+    var desc_size: usize = 0;
+    var desc_ver: u32 = 0;
     _ = boot_services.getMemoryMap(&mem_map_size, mem_map, &map_key, &desc_size, &desc_ver);
     mem_map_size += desc_size;
     assert(boot_services.allocatePool(uefi.tables.MemoryType.BootServicesData, mem_map_size, @ptrCast(*[*]align(8) u8, &mem_map)), "Unable to allocate memory map.", @src());
