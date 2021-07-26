@@ -1,37 +1,9 @@
 const uefi = @import("std").os.uefi;
 const w = @import("std").unicode.utf8ToUtf16LeStringLiteral;
 const assert = @import("helpers").assert;
-const builtin = @import("std").builtin;
-const fmt = @import("std").fmt;
-const utf8ToUtf16Le = @import("std").unicode.utf8ToUtf16Le;
-const debug = @import("std").debug;
+const findCfgTable = @import("helpers").findCfgTable;
 
-pub fn panic(msg: []const u8, stack_trace: ?*builtin.StackTrace) noreturn {
-    _ = stack_trace;
-    var buf = [_:0]u8{0} ** 512;
-    var buf16 = [_:0]u16{0} ** 512;
-    _ = fmt.bufPrintZ(buf[0..], "Panic: {s}\n\rStack trace:\n\r\t0x{X}\n\r", .{ msg, @returnAddress() }) catch unreachable;
-    _ = utf8ToUtf16Le(buf16[0..], buf[0..]) catch unreachable;
-    _ = uefi.system_table.con_out.?.outputString(buf16[0..]);
-    var iter = debug.StackIterator.init(@returnAddress(), null);
-    while (iter.next()) |addr| {
-        _ = fmt.bufPrintZ(buf[0..], "\t0x{X}\n\r", .{addr}) catch unreachable;
-        _ = utf8ToUtf16Le(buf16[0..], buf[0..]) catch unreachable;
-        _ = uefi.system_table.con_out.?.outputString(buf16[0..]);
-    }
-    while (true) {}
-}
-
-pub fn findCfgTable(guid: uefi.Guid) !uefi.tables.ConfigurationTable {
-    var i: usize = 0;
-    while (i < uefi.system_table.number_of_table_entries) : (i += 1) {
-        const table = uefi.system_table.configuration_table[i];
-
-        if (guid.eql(table.vendor_guid)) return table;
-    }
-
-    return error.CfgTableNotFound;
-}
+pub const panic = @import("helpers").panic;
 
 pub fn main() void {
     const system_table = uefi.system_table;
