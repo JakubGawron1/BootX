@@ -2,7 +2,6 @@ const uefi = @import("std").os.uefi;
 const w = @import("std").unicode.utf8ToUtf16LeStringLiteral;
 const assert = @import("helpers").assert;
 const findCfgTable = @import("helpers").findCfgTable;
-const coff = @import("cofflib");
 
 pub const panic = @import("helpers").panic;
 
