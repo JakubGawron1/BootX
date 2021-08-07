@@ -1,3 +1,4 @@
+// Copyright (c) 2021 VisualDevelopment. All rights reserved.
 const Builder = @import("std").build.Builder;
 const Target = @import("std").Target;
 

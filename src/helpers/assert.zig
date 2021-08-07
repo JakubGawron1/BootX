@@ -1,37 +1,28 @@
-const uefi = @import("std").os.uefi;
-const utf8ToUtf16Le = @import("std").unicode.utf8ToUtf16Le;
-const fmt = @import("std").fmt;
-const builtin = @import("std").builtin;
-const path = @import("std").fs.path;
-const stringToEnum = @import("std").meta.stringToEnum;
+// Copyright (c) 2021 VisualDevelopment. All rights reserved.
+const std = @import("std");
+const uefi = std.os.uefi;
+const con_out_writer = @import("conoutwriter.zig").con_out_writer;
 
-fn assertValidExpr(comptime T: anytype) void {
-    const isValid = switch (T) {
+pub fn assert(expr: anytype, msg: [:0]const u8, srcLoc: std.builtin.SourceLocation) void {
+    const isValid = switch (@TypeOf(expr)) {
         bool, uefi.Status => true,
         else => false,
     };
 
     if (!isValid) @compileError("assert only accepts expressions of type 'bool' and 'uefi.Status'");
-}
 
-pub fn assert(expr: anytype, msg: [:0]const u8, srcLoc: builtin.SourceLocation) void {
-    assertValidExpr(@TypeOf(expr));
-    const ok = if (@TypeOf(expr) == bool) expr else expr == uefi.Status.Success;
-    if (!ok) {
-        var buf = [_:0]u8{0} ** 512;
-        var buf16 = [_:0]u16{0} ** 512;
-
-        _ = fmt.bufPrintZ(buf[0..], "Assertion failed at {s}:{d}:{d}, {s}: {s}\n\r{s}{" ++ if (@TypeOf(expr) == bool) "s}" else "}", .{
-            path.basename(srcLoc.file),
+    const isStatus = @TypeOf(expr) == uefi.Status;
+    if (if (isStatus) expr != uefi.Status.Success else !expr) {
+        con_out_writer.print("Assertion failed at {s}:{d}:{d}, {s}: {s}\n\r{s}{" ++ if (isStatus) "}" else "s}", .{
+            std.fs.path.basename(srcLoc.file),
             srcLoc.line,
             srcLoc.column,
             srcLoc.fn_name,
             msg,
-            if (@TypeOf(expr) == uefi.Status) "Context: UEFI function called returned " else "",
-            if (@TypeOf(expr) == uefi.Status) expr else ""
+            if (isStatus) "Context: UEFI function called returned " else "",
+            if (isStatus) expr else ""
         }) catch unreachable;
-        _ = utf8ToUtf16Le(buf16[0..], buf[0..]) catch unreachable;
-        _ = uefi.system_table.con_out.?.outputString(buf16[0..]);
+
         while (true) {}
     }
 }
