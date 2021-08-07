@@ -20,7 +20,7 @@ pub fn assert(expr: anytype, msg: [:0]const u8, srcLoc: std.builtin.SourceLocati
             srcLoc.fn_name,
             msg,
             if (isStatus) "Context: UEFI function called returned " else "",
-            if (isStatus) expr else ""
+            if (isStatus) expr else "",
         }) catch unreachable;
 
         while (true) {}

@@ -21,7 +21,7 @@ pub const LoadFileError = error{
     ReadFailure,
 };
 
-const FileRet = struct { buffer_size: usize, buffer: [*]align(8)u8 };
+const FileRet = struct { buffer_size: usize, buffer: [*]align(8) u8 };
 
 pub fn loadFile(path: [:0]const u16, open_mode: u64, attributes: u64) LoadFileError!FileRet {
     // Open file
@@ -29,7 +29,7 @@ pub fn loadFile(path: [:0]const u16, open_mode: u64, attributes: u64) LoadFileEr
     switch (esp.open(&file, path, open_mode, attributes)) {
         .Success => {},
         else => |sts| {
-            con_out_writer.print("Failed to open file handle: {s}", .{sts});
+            con_out_writer.print("Failed to open file handle: {}", .{sts}) catch unreachable;
             return LoadFileError.FileOpenFailure;
         },
     }
@@ -42,14 +42,14 @@ pub fn loadFile(path: [:0]const u16, open_mode: u64, attributes: u64) LoadFileEr
     switch (uefi.system_table.boot_services.?.allocatePool(uefi.tables.MemoryType.LoaderData, info_buffer_size, @ptrCast(*[*]align(8) u8, &info_buffer))) {
         .Success => {},
         else => |sts| {
-            con_out_writer.print("Failed to allocate memory for file info: {s}", .{sts});
+            con_out_writer.print("Failed to allocate memory for file info: {}", .{sts}) catch unreachable;
             return LoadFileError.AllocationFailure;
         },
     }
     switch (file.getInfo(&uefi.protocols.FileProtocol.guid, &info_buffer_size, @ptrCast([*]u8, info_buffer))) {
         .Success => {},
         else => |sts| {
-            con_out_writer.print("Failed to get file info: {s}", .{sts});
+            con_out_writer.print("Failed to get file info: {}", .{sts}) catch unreachable;
             return LoadFileError.FileInfoFailure;
         },
     }
@@ -61,14 +61,14 @@ pub fn loadFile(path: [:0]const u16, open_mode: u64, attributes: u64) LoadFileEr
     switch (uefi.system_table.boot_services.?.allocatePool(uefi.tables.MemoryType.LoaderData, buffer_size, &buffer)) {
         .Success => {},
         else => |sts| {
-            con_out_writer.print("Failed to allocate file buffer: {s}", .{sts});
+            con_out_writer.print("Failed to allocate file buffer: {}", .{sts}) catch unreachable;
             return LoadFileError.AllocationFailure;
         },
     }
     switch (file.read(&buffer_size, buffer)) {
         .Success => {},
         else => |sts| {
-            con_out_writer.print("Failed to read file data: {s}", .{sts});
+            con_out_writer.print("Failed to read file data: {}", .{sts}) catch unreachable;
             return LoadFileError.ReadFailure;
         },
     }
