@@ -21,9 +21,7 @@ pub const LoadFileError = error{
     ReadFailure,
 };
 
-const FileRet = struct { buffer_size: usize, buffer: [*]align(8) u8 };
-
-pub fn loadFile(path: [:0]const u16, open_mode: u64, attributes: u64) LoadFileError!FileRet {
+pub fn loadFile(path: [:0]const u16, open_mode: u64, attributes: u64) LoadFileError![]align(8) u8 {
     // Open file
     var file: *uefi.protocols.FileProtocol = undefined;
     switch (esp.open(&file, path, open_mode, attributes)) {
@@ -75,5 +73,5 @@ pub fn loadFile(path: [:0]const u16, open_mode: u64, attributes: u64) LoadFileEr
     // Close file
     _ = file.close();
 
-    return FileRet{ .buffer_size = buffer_size, .buffer = buffer };
+    return buffer[0..buffer_size];
 }
