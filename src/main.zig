@@ -8,7 +8,7 @@ const assert = helpers.assert;
 
 pub const panic = helpers.panic;
 
-pub fn main() void {
+pub fn main() noreturn {
     const system_table = uefi.system_table;
     const boot_services = uefi.system_table.boot_services.?;
 
@@ -27,7 +27,7 @@ pub fn main() void {
     if (helpers.loadFile(w("\\Fuse.exec"), uefi.protocols.FileProtocol.efi_file_mode_read, 0)) |buffer| {
         helpers.con_out_writer.writeAll("Parsing 'Fuse.exec':\n\r") catch unreachable;
         if (std.elf.Header.parse(buffer[0..64])) |header| {
-            assert(header.endian == std.builtin.Endian.Little, "Only little-endian is supported.", @src());
+            assert(header.endian == .Little, "Only little-endian is supported.", @src());
             assert(header.is_64 == true and header.machine == ._X86_64, "Only AMD64 is supported.", @src());
 
             var phdr_iter = header.program_header_iterator(std.io.fixedBufferStream(buffer));
