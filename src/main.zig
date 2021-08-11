@@ -1,4 +1,5 @@
 // Copyright (c) 2021 VisualDevelopment. All rights reserved.
+
 const std = @import("std");
 const uefi = std.os.uefi;
 const w = std.unicode.utf8ToUtf16LeStringLiteral;
@@ -24,13 +25,15 @@ pub fn main() void {
     } else |_| assert(false, "No ACPI found.", @src());
 
     if (helpers.loadFile(w("\\Fuse.exec"), uefi.protocols.FileProtocol.efi_file_mode_read, 0)) |buffer| {
-        helpers.con_out_writer.writeAll("Parsing elf 'Fuse.exec': ") catch unreachable;
+        helpers.con_out_writer.writeAll("Parsing 'Fuse.exec':\n\r") catch unreachable;
         if (std.elf.Header.parse(buffer[0..64])) |header| {
-            helpers.con_out_writer.print("{}\n\rProgram header entries:\n\r", .{header}) catch unreachable;
-            var stream = helpers.BufferSource(@TypeOf(buffer)).init(buffer);
-            var phdr_iter = header.program_header_iterator(stream);
-            while (if (phdr_iter.next()) |phdr| phdr else |_| @panic("Unable to parse program entry.")) |phdr_entry| {
-                helpers.con_out_writer.print("\t{}\n\r", .{phdr_entry}) catch unreachable;
+            assert(header.endian == std.builtin.Endian.Little, "Only little-endian is supported.", @src());
+            assert(header.is_64 == true and header.machine == ._X86_64, "Only AMD64 is supported.", @src());
+
+            var phdr_iter = header.program_header_iterator(std.io.fixedBufferStream(buffer));
+            while (if (phdr_iter.next()) |phdr| phdr else |_| @panic("Unable to parse program header entry.")) |phdr_entry| {
+                if (phdr_entry.p_type != std.elf.PT_LOAD) continue;
+                helpers.con_out_writer.print("    Loading data from 0x{X} to 0x{X}\n\r", .{ @ptrToInt(buffer.ptr + phdr_entry.p_offset), phdr_entry.p_vaddr }) catch unreachable;
             }
         } else |_| assert(false, "Failed to parse elf header.", @src());
     } else |_| assert(false, "Failed to open file.", @src());
