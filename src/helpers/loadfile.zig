@@ -1,4 +1,5 @@
 // Copyright (c) 2021 VisualDevelopment. All rights reserved.
+
 const uefi = @import("std").os.uefi;
 const assert = @import("assert.zig").assert;
 const con_out_writer = @import("conoutwriter.zig").con_out_writer;
