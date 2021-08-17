@@ -13,7 +13,6 @@ use alloc::*;
 use elf_rs::*;
 use log::*;
 use uefi::prelude::*;
-use uefi::proto::media::file::{File, FileAttribute, FileInfo, FileMode, FileType};
 use uefi::table::boot::{AllocateType, MemoryType};
 use uefi::ResultExt;
 
@@ -21,24 +20,12 @@ use uefi::ResultExt;
 fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     uefi_services::init(&mut system_table).expect_success("Failed to initialize utilities");
     system_table.stdout().reset(false).expect_success("Failed to reset stdout");
+
     info!("Welcome...");
-    let boot_services = system_table.boot_services();
-    let fs = unsafe { boot_services.get_image_file_system(image).unwrap().unwrap().get().as_mut().unwrap() };
-    let mut esp = fs.open_volume().unwrap().unwrap();
-    let mut file = match esp
-        .open("\\fuse.exec", FileMode::Read, FileAttribute::empty())
-        .expect_success("Your volume is corrupted, no fuse.exec was found")
-        .into_type()
-        .unwrap()
-        .unwrap()
-    {
-        FileType::Regular(f) => f,
-        _ => panic!("How do you expect me to load a folder?"),
-    };
 
-    let mut buffer = vec![0; file.get_boxed_info::<FileInfo>().expect_success("Failed to get file info").file_size().try_into().unwrap()];
-
-    file.read(&mut buffer).expect_success("Failed to read fuse.exec.");
+    helpers::open_esp(image);
+    
+    let buffer = helpers::load_file("\\fuse.exec");
 
     if let Elf::Elf64(elf) = Elf::from_bytes(&buffer).unwrap() {
         assert_eq!(elf.header().machine(), ElfMachine::x86_64);
@@ -53,7 +40,8 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
                 let dest = unsafe { core::slice::from_raw_parts_mut((phdr.ph.vaddr() - helpers::paging::KERNEL_VIRT_OFFSET) as *mut u8, phdr.ph.memsz() as usize) };
                 let npages = (((phdr.ph.memsz() + 0xFFF) / 0x1000) as usize).try_into().unwrap();
                 info!("vaddr: {:#X}, paddr: {:#X}, npages: {:#X}", phdr.ph.vaddr(), phdr.ph.vaddr() - helpers::paging::KERNEL_VIRT_OFFSET, npages);
-                boot_services
+                system_table
+                    .boot_services()
                     .allocate_pages(AllocateType::Address((phdr.ph.vaddr() - helpers::paging::KERNEL_VIRT_OFFSET) as usize), MemoryType::custom(0x80000000), npages)
                     .expect_success("Failed to allocate section");
                 dest.copy_from_slice(src);
@@ -77,8 +65,8 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         }
 
         info!("Exiting boot services and jumping to kernel...");
-        let mut mmap_buf = vec![0; boot_services.memory_map_size()];
-        mmap_buf.resize(boot_services.memory_map_size(), 0);
+        let mut mmap_buf = vec![0; system_table.boot_services().memory_map_size()];
+        mmap_buf.resize(system_table.boot_services().memory_map_size(), 0);
         system_table.exit_boot_services(image, &mut mmap_buf).expect_success("Failed to exit boot services.");
 
         unsafe {
