@@ -41,7 +41,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     file.read(&mut buffer).expect_success("Failed to read fuse.exec.");
 
     if let Elf::Elf64(elf) = Elf::from_bytes(&buffer).unwrap() {
-        assert!(elf.header().machine() == ElfMachine::x86_64, "Only AMD64, I'm not saying please.");
+        assert_eq!(elf.header().machine(), ElfMachine::x86_64);
         assert!(elf.header().entry_point() >= helpers::paging::KERNEL_VIRT_OFFSET, "Only higher-half kernels.");
 
         info!("Parsing program headers: ");
@@ -76,7 +76,11 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
             helpers::paging::map_higher_half(pml4);
         }
 
-        info!("Jumping to kernel...");
+        info!("Exiting boot services and jumping to kernel...");
+        let mut mmap_buf = vec![0; boot_services.memory_map_size()];
+        mmap_buf.resize(boot_services.memory_map_size(), 0);
+        system_table.exit_boot_services(image, &mut mmap_buf).expect_success("Failed to exit boot services.");
+
         unsafe {
             core::mem::transmute::<*const (), fn() -> !>(elf.header().entry_point() as *const ())();
         };
