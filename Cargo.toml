@@ -1,0 +1,22 @@
+cargo-features = ["edition2021"]
+
+[package]
+name = "fwlauncher"
+version = "0.1.0"
+authors = ["VisualDevelopment"]
+publish = false
+edition = "2021"
+
+[[bin]]
+name = "bootx64"
+path = "src/main.rs"
+
+[dependencies]
+uefi = { version = "0.11.0", features = ["exts", "logger"] }
+uefi-services = "0.8.0"
+log = { version = "0.4.14", default-features = false }
+elf_rs = "0.1.3"
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+modular-bitfield = "0.11.2"
+bit = "0.1.1"
+bitflags = "1.3.2"
