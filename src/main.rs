@@ -157,14 +157,13 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
             uefi::proto::console::gop::PixelFormat::Bitmask => kaboom::tags::PixelFormat::Bitmask,
             _ => panic!("Blt-only mode not supported."),
         },
-        pixel_bitmask: match gop.current_mode_info().pixel_bitmask() {
-            Some(v) => Some(kaboom::tags::PixelBitmask {
+        pixel_bitmask: gop.current_mode_info().pixel_bitmask().map(|v| {
+            kaboom::tags::PixelBitmask {
                 red: v.red,
                 green: v.green,
                 blue: v.blue,
-            }),
-            None => None,
-        },
+            }
+        }),
         pixels_per_scanline: gop.current_mode_info().stride(),
         base: gop.frame_buffer().as_mut_ptr() as *mut u32,
     });
@@ -173,15 +172,15 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let rsdp = unsafe {
         (system_table
             .config_table()
-            .into_iter()
+            .iter()
             .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
-            .unwrap_or(
+            .unwrap_or_else(|| {
                 system_table
                     .config_table()
-                    .into_iter()
+                    .iter()
                     .find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
-                    .expect("No ACPI found on the system!"),
-            )
+                    .expect("No ACPI found on the system!")
+            })
             .address as *const acpi::tables::Rsdp)
             .as_ref()
             .unwrap()
