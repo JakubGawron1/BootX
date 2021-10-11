@@ -71,11 +71,15 @@ impl PageTableOffsets {
     }
 }
 
-unsafe fn get_or_alloc_entry(previous_level: *mut PageTable, offset: usize, flags: PageTableEntryFlags) -> *mut PageTable {
-    let entry = &mut (*previous_level).entries[offset];
+unsafe fn get_or_alloc_entry<'a>(
+    previous_level: &'a mut PageTable,
+    offset: usize,
+    flags: PageTableEntryFlags,
+) -> Option<&'static mut PageTable> {
+    let entry = &mut previous_level.entries[offset];
     if entry.present() == false {
-        let table = Box::new(PageTable::default());
-        entry.set_address((&*table as *const PageTable as u64) >> 12);
+        let mut table = Box::<PageTable>::new_zeroed();
+        entry.set_address((table.as_mut_ptr() as u64) >> 12);
         Box::leak(table);
 
         entry.set_present(flags.present);
@@ -88,10 +92,15 @@ unsafe fn get_or_alloc_entry(previous_level: *mut PageTable, offset: usize, flag
         entry.set_no_execute(flags.no_execute);
     }
 
-    (entry.address() << 12) as *mut PageTable
+    ((entry.address() << 12) as *mut PageTable).as_mut()
 }
 
-unsafe fn map_huge_pages(pml4: *mut PageTable, virt: u64, phys: u64, count: u64) {
+unsafe fn map_huge_pages<'a>(
+    pml4: &'a mut PageTable,
+    virt: u64,
+    phys: u64,
+    count: u64,
+) -> Option<()> {
     let flags = PageTableEntryFlags {
         present: true,
         writable: true,
@@ -103,13 +112,19 @@ unsafe fn map_huge_pages(pml4: *mut PageTable, virt: u64, phys: u64, count: u64)
         let physical_address = phys + 0x200000 * i;
         let virtual_address = virt + 0x200000 * i;
         let offs = PageTableOffsets::new(virtual_address);
-        let pml3 = get_or_alloc_entry(pml4, offs.pml4, flags);
-        let pml2 = get_or_alloc_entry(pml3, offs.pml3, flags);
-        (*pml2).entries[offs.pml2 as usize] = PageTableEntry::new().with_present(true).with_writable(true).with_huge(true).with_address(physical_address >> 12);
+        let pml3 = get_or_alloc_entry(pml4, offs.pml4, flags)?;
+        let pml2 = get_or_alloc_entry(pml3, offs.pml3, flags)?;
+        pml2.entries[offs.pml2 as usize] = PageTableEntry::new()
+            .with_present(true)
+            .with_writable(true)
+            .with_huge(true)
+            .with_address(physical_address >> 12);
     }
+    Some(())
 }
 
-pub unsafe fn map_higher_half(pml4: *mut PageTable) {
-    map_huge_pages(pml4, PHYS_VIRT_OFFSET + 0x200000, 0, 2047);
-    map_huge_pages(pml4, KERNEL_VIRT_OFFSET, 0, 1024);
+pub unsafe fn map_higher_half(pml4: &'static mut PageTable) -> Option<()> {
+    map_huge_pages(pml4, PHYS_VIRT_OFFSET + 0x200000, 0, 2047)?;
+    map_huge_pages(pml4, KERNEL_VIRT_OFFSET, 0, 1024)?;
+    Some(())
 }

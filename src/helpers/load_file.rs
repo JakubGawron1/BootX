@@ -1,4 +1,4 @@
-use alloc::{alloc::Global, format, vec, vec::Vec};
+use alloc::{format, vec, vec::Vec};
 use uefi::{
     prelude::*,
     proto::media::file::{Directory, File, FileAttribute, FileInfo, FileMode, FileType},
@@ -8,15 +8,23 @@ static mut ESP: Option<Directory> = None;
 
 pub fn open_esp(image: Handle) {
     unsafe {
-        let fs = uefi_services::system_table().as_mut().boot_services().get_image_file_system(image).unwrap().unwrap().get().as_mut().unwrap();
+        let fs = uefi_services::system_table()
+            .as_mut()
+            .boot_services()
+            .get_image_file_system(image)
+            .unwrap()
+            .unwrap()
+            .get()
+            .as_mut()
+            .unwrap();
         ESP = Some(fs.open_volume().unwrap().unwrap());
     }
 }
 
-pub fn load_file(path: &str) -> Vec<u8, Global> {
+pub fn load_file(path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u8> {
     let esp = unsafe { ESP.as_mut().unwrap() };
     let mut file = match esp
-        .open(path, FileMode::Read, FileAttribute::empty())
+        .open(path, mode, attributes)
         .expect_success(format!("File {} not found", path).as_str())
         .into_type()
         .unwrap()
@@ -34,7 +42,8 @@ pub fn load_file(path: &str) -> Vec<u8, Global> {
             .try_into()
             .unwrap()
     ];
-    file.read(&mut buffer).expect_success(format!("Failed to read {}.", path).as_str());
+    file.read(&mut buffer)
+        .expect_success(format!("Failed to read {}.", path).as_str());
 
     buffer
 }
