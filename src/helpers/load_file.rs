@@ -1,6 +1,8 @@
-use ::alloc::*;
-use uefi::prelude::*;
-use uefi::proto::media::file::{Directory, File, FileAttribute, FileInfo, FileMode, FileType};
+use alloc::{alloc::Global, format, vec, vec::Vec};
+use uefi::{
+    prelude::*,
+    proto::media::file::{Directory, File, FileAttribute, FileInfo, FileMode, FileType},
+};
 
 static mut ESP: Option<Directory> = None;
 
@@ -11,7 +13,7 @@ pub fn open_esp(image: Handle) {
     }
 }
 
-pub fn load_file(path: &str) -> vec::Vec<u8, alloc::Global> {
+pub fn load_file(path: &str) -> Vec<u8, Global> {
     let esp = unsafe { ESP.as_mut().unwrap() };
     let mut file = match esp
         .open(path, FileMode::Read, FileAttribute::empty())
