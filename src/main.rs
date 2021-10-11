@@ -6,20 +6,20 @@
 #![feature(allocator_api)]
 #![feature(core_intrinsics)]
 
-mod helpers;
-
 extern crate alloc;
 
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::mem::size_of;
 
-use alloc::{boxed::Box, vec, vec::Vec};
 use amd64::paging::PML4;
 use log::*;
 use uefi::{
-    prelude::{entry, Boot, Handle, ResultExt, Status, SystemTable},
+    prelude::{Boot, entry, Handle, ResultExt, Status, SystemTable},
     proto::media::file::{FileAttribute, FileMode},
     table::boot::{AllocateType, MemoryType},
 };
+
+mod helpers;
 
 #[entry]
 fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -117,15 +117,17 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         asm!("mov rax, cr0",
         "and rax, {wp_bit}",
         "mov cr0, rax",
-            wp_bit = const !(1u64 << 16)
+        wp_bit = const !(1u64 << 16)
         );
     }
 
     info!("    2. Modifying paging mappings to map higher-half...");
 
-    let pml4 = <amd64::paging::PageTable as PML4>::get();
-    pml4.map_higher_half();
-    pml4.set();
+    unsafe {
+        let pml4 = <amd64::paging::PageTable as PML4>::get();
+        pml4.map_higher_half();
+        pml4.set();
+    }
 
     let bss = elf
         .section_headers

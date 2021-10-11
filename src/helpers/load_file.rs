@@ -1,4 +1,5 @@
 use alloc::{format, vec, vec::Vec};
+
 use uefi::{
     prelude::*,
     proto::media::file::{Directory, File, FileAttribute, FileInfo, FileMode, FileType},
@@ -42,6 +43,7 @@ pub fn load_file(path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u
             .try_into()
             .unwrap()
     ];
+
     file.read(&mut buffer)
         .expect_success(format!("Failed to read {}.", path).as_str());
 
