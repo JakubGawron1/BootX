@@ -182,7 +182,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
                     .find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
                     .expect("No ACPI found on the system!"),
             )
-            .address as *const acpi::tables::RSDP)
+            .address as *const acpi::tables::Rsdp)
             .as_ref()
             .unwrap()
     };
