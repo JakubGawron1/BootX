@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![warn(unused_extern_crates)]
+#![deny(warnings, unused_extern_crates, clippy::cargo)]
 #![feature(asm)]
 #![feature(abi_efiapi)]
 #![feature(allocator_api)]
@@ -14,7 +14,7 @@ use core::mem::size_of;
 use amd64::paging::PML4;
 use log::*;
 use uefi::{
-    prelude::{Boot, entry, Handle, ResultExt, Status, SystemTable},
+    prelude::{entry, Boot, Handle, ResultExt, Status, SystemTable},
     proto::media::file::{FileAttribute, FileMode},
     table::boot::{AllocateType, MemoryType},
 };
