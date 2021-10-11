@@ -20,7 +20,6 @@ uefi = { version = "0.12.0", features = ["exts", "logger"] }
 uefi-services = "0.9.0"
 log = { version = "0.4.14", default-features = false }
 xmas-elf = "0.8.0"
-modular-bitfield = "0.11.2"
-bit = "0.1.1"
+amd64 = { path = "../amd64" }
 acpi = { path = "../acpi" }
 kaboom = { path = "../kaboom" }

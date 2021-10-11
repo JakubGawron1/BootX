@@ -5,7 +5,6 @@
 #![feature(abi_efiapi)]
 #![feature(allocator_api)]
 #![feature(core_intrinsics)]
-#![feature(new_uninit)]
 
 mod helpers;
 
@@ -14,6 +13,7 @@ extern crate alloc;
 use core::mem::size_of;
 
 use alloc::{boxed::Box, vec, vec::Vec};
+use amd64::paging::PML4;
 use log::*;
 use uefi::{
     prelude::{entry, Boot, Handle, ResultExt, Status, SystemTable},
@@ -58,7 +58,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         xmas_elf::header::Machine::X86_64
     );
     assert!(
-        elf.header.pt2.entry_point() >= helpers::paging::KERNEL_VIRT_OFFSET,
+        elf.header.pt2.entry_point() >= amd64::paging::KERNEL_VIRT_OFFSET,
         "Only higher-half kernels"
     );
 
@@ -69,7 +69,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     {
         xmas_elf::program::sanity_check(phdr, &elf).expect("Program section failed sanity check");
         assert!(
-            phdr.virtual_addr() >= helpers::paging::KERNEL_VIRT_OFFSET,
+            phdr.virtual_addr() >= amd64::paging::KERNEL_VIRT_OFFSET,
             "Only higher-half kernels."
         );
 
@@ -79,7 +79,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         let src = &buffer[offset..(offset + file_size)];
         let dest = unsafe {
             core::slice::from_raw_parts_mut(
-                (phdr.virtual_addr() - helpers::paging::KERNEL_VIRT_OFFSET) as *mut u8,
+                (phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET) as *mut u8,
                 memsz,
             )
         };
@@ -87,7 +87,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         info!(
             "vaddr: {:#X}, paddr: {:#X}, npages: {:#X}",
             phdr.virtual_addr(),
-            phdr.virtual_addr() - helpers::paging::KERNEL_VIRT_OFFSET,
+            phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET,
             npages
         );
         assert_eq!(
@@ -95,7 +95,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
                 .boot_services()
                 .allocate_pages(
                     AllocateType::Address(
-                        (phdr.virtual_addr() - helpers::paging::KERNEL_VIRT_OFFSET)
+                        (phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET)
                             .try_into()
                             .unwrap(),
                     ),
@@ -103,7 +103,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
                     npages,
                 )
                 .expect_success("Failed to load section above. Sections might be misaligned."),
-            phdr.virtual_addr() - helpers::paging::KERNEL_VIRT_OFFSET
+            phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET
         );
 
         for (a, b) in dest
@@ -116,6 +116,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     info!("Setting up higher-half paging mappings:");
     info!("    1. Turning off write protection...");
+
     unsafe {
         asm!("mov rax, cr0",
         "and rax, {wp_bit}",
@@ -123,14 +124,14 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
             wp_bit = const !(1u64 << 16)
         );
     }
-    info!("    2. Modifying paging mappings to map higher-half...");
-    unsafe {
-        let mut pml4: *mut helpers::paging::PageTable;
-        asm!("mov {}, cr3", out(reg) pml4);
-        helpers::paging::map_higher_half(&mut *pml4);
-        asm!("mov cr3, {}", in(reg) pml4);
-    }
 
+    info!("    2. Modifying paging mappings to map higher-half...");
+
+    let pml4 = <amd64::paging::PageTable as PML4>::get();
+    pml4.map_higher_half();
+    pml4.set();
+
+    // See issue https://github.com/nrc/xmas-elf/issues/75
     // let bss = elf
     //     .find_section_by_name(".bss")
     //     .expect("No .bss section found");
@@ -237,12 +238,10 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     explosion.tags = tags.leak();
 
     unsafe { asm!("cli") }
-    unsafe {
-        let kernel_main = core::mem::transmute::<_, fn(&'static kaboom::ExplosionResult) -> !>(
-            elf.header.pt2.entry_point() as *const (),
-        );
 
-        asm!("call {}", in(reg) kernel_main, in("rdi") Box::leak(explosion));
-        core::intrinsics::unreachable()
+    let kernel_main = unsafe {
+        core::mem::transmute::<_, kaboom::EntryPoint>(elf.header.pt2.entry_point() as *const ())
     };
+
+    kernel_main(Box::leak(explosion));
 }
