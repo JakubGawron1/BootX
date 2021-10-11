@@ -34,7 +34,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     helpers::open_esp(image);
 
-    let buffer = helpers::load_file("\\Fuse.exec");
+    let buffer = helpers::load_file("\\fuse.exec");
 
     if let Elf::Elf64(elf) = Elf::from_bytes(&buffer).unwrap() {
         debug!("{:X?}", elf.header());
