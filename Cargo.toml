@@ -19,7 +19,11 @@ path = "src/main.rs"
 uefi = { version = "0.12.0", features = ["exts", "logger"] }
 uefi-services = "0.9.0"
 log = { version = "0.4.14", default-features = false }
-xmas-elf = "0.8.0"
+goblin = { version = "0.4.2", default-features = false, features = [
+    "elf32",
+    "elf64",
+    "endian_fd",
+] }
 amd64 = { path = "../amd64" }
 acpi = { path = "../acpi" }
 kaboom = { path = "../kaboom" }

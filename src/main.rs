@@ -47,47 +47,43 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     let buffer = helpers::load_file("\\fuse.exec", FileMode::Read, FileAttribute::empty());
 
-    let elf = xmas_elf::ElfFile::new(&buffer).expect("Failed to parse kernel ELF");
-    xmas_elf::header::sanity_check(&elf).expect("ELF data failed sanity check");
+    let elf = goblin::elf::Elf::parse(&buffer).expect("Failed to parse kernel elf");
 
     info!("{:X?}", elf.header);
-    assert_eq!(elf.header.pt1.class(), xmas_elf::header::Class::SixtyFour);
-    assert_eq!(elf.header.pt1.data(), xmas_elf::header::Data::LittleEndian);
-    assert_eq!(
-        elf.header.pt2.machine().as_machine(),
-        xmas_elf::header::Machine::X86_64
-    );
+    assert!(elf.is_64, "Only ELF64");
+    assert_eq!(elf.header.e_machine, goblin::elf::header::EM_X86_64);
+    assert!(elf.little_endian, "Only little-endian ELFs");
     assert!(
-        elf.header.pt2.entry_point() >= amd64::paging::KERNEL_VIRT_OFFSET,
+        elf.entry >= amd64::paging::KERNEL_VIRT_OFFSET,
         "Only higher-half kernels"
     );
 
     info!("Parsing program headers: ");
     for phdr in elf
-        .program_iter()
-        .filter(|phdr| phdr.get_type().unwrap() == xmas_elf::program::Type::Load)
+        .program_headers
+        .iter()
+        .filter(|phdr| phdr.p_type == goblin::elf::program_header::PT_LOAD)
     {
-        xmas_elf::program::sanity_check(phdr, &elf).expect("Program section failed sanity check");
         assert!(
-            phdr.virtual_addr() >= amd64::paging::KERNEL_VIRT_OFFSET,
+            phdr.p_vaddr >= amd64::paging::KERNEL_VIRT_OFFSET,
             "Only higher-half kernels."
         );
 
-        let offset: usize = phdr.offset().try_into().unwrap();
-        let memsz = phdr.mem_size().try_into().unwrap();
-        let file_size: usize = phdr.file_size().try_into().unwrap();
+        let offset: usize = phdr.p_offset.try_into().unwrap();
+        let memsz = phdr.p_memsz.try_into().unwrap();
+        let file_size: usize = phdr.p_filesz.try_into().unwrap();
         let src = &buffer[offset..(offset + file_size)];
         let dest = unsafe {
             core::slice::from_raw_parts_mut(
-                (phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET) as *mut u8,
+                (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET) as *mut u8,
                 memsz,
             )
         };
-        let npages = (phdr.mem_size() + 0xFFF) as usize / 0x1000;
+        let npages = (memsz + 0xFFF) as usize / 0x1000;
         info!(
             "vaddr: {:#X}, paddr: {:#X}, npages: {:#X}",
-            phdr.virtual_addr(),
-            phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET,
+            phdr.p_vaddr,
+            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET,
             npages
         );
         assert_eq!(
@@ -95,7 +91,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
                 .boot_services()
                 .allocate_pages(
                     AllocateType::Address(
-                        (phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET)
+                        (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET)
                             .try_into()
                             .unwrap(),
                     ),
@@ -103,7 +99,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
                     npages,
                 )
                 .expect_success("Failed to load section above. Sections might be misaligned."),
-            phdr.virtual_addr() - amd64::paging::KERNEL_VIRT_OFFSET
+            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET
         );
 
         for (a, b) in dest
@@ -131,13 +127,14 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     pml4.map_higher_half();
     pml4.set();
 
-    // See issue https://github.com/nrc/xmas-elf/issues/75
-    // let bss = elf
-    //     .find_section_by_name(".bss")
-    //     .expect("No .bss section found");
-    // unsafe {
-    //     (bss.address() as *mut u8).write_bytes(0, bss.size().try_into().unwrap());
-    // }
+    let bss = elf
+        .section_headers
+        .iter()
+        .find(|shdr| elf.shdr_strtab.get_at(shdr.sh_name).unwrap_or_default() == ".bss")
+        .expect("No .bss section found");
+    unsafe {
+        (bss.sh_addr as *mut u8).write_bytes(0, bss.sh_size.try_into().unwrap());
+    }
 
     let mut explosion = Box::new(kaboom::ExplosionResult::new(Default::default()));
     let mut tags = Vec::with_capacity(3);
@@ -239,9 +236,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     unsafe { asm!("cli") }
 
-    let kernel_main = unsafe {
-        core::mem::transmute::<_, kaboom::EntryPoint>(elf.header.pt2.entry_point() as *const ())
-    };
+    let kernel_main: kaboom::EntryPoint = unsafe { core::mem::transmute(elf.entry as *const ()) };
 
     kernel_main(Box::leak(explosion));
 }
