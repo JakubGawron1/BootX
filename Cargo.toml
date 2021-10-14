@@ -24,6 +24,6 @@ goblin = { version = "0.4.2", default-features = false, features = [
     "elf64",
     "endian_fd",
 ] }
-amd64 = { path = "../amd64" }
-acpi = { path = "../acpi" }
-kaboom = { path = "../kaboom" }
+amd64 = { path = "../AMD64" }
+acpi = { path = "../ACPI" }
+kaboom = { path = "../Kaboom" }
