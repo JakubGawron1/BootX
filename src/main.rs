@@ -228,10 +228,6 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         }
     }
 
-    for _ in 0..(memory_map_entries.capacity() - memory_map_entries.len()) {
-        memory_map_entries.push(None);
-    }
-
     tags.push(kaboom::tags::TagType::MemoryMap(memory_map_entries.leak()));
     explosion.tags = tags.leak();
 
