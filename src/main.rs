@@ -206,24 +206,24 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .1
     {
         match desc.ty {
-            MemoryType::CONVENTIONAL => memory_map_entries.push(Some(
-                kaboom::tags::MemoryEntry::Usable(kaboom::tags::MemoryData {
+            MemoryType::CONVENTIONAL => memory_map_entries.push(kaboom::tags::MemoryEntry::Usable(
+                kaboom::tags::MemoryData {
                     base: desc.phys_start,
                     pages: desc.page_count,
-                }),
+                },
             )),
-            MemoryType::LOADER_CODE | MemoryType::LOADER_DATA => memory_map_entries.push(Some(
+            MemoryType::LOADER_CODE | MemoryType::LOADER_DATA => memory_map_entries.push(
                 kaboom::tags::MemoryEntry::BootLoaderReclaimable(kaboom::tags::MemoryData {
                     base: desc.phys_start,
                     pages: desc.page_count,
                 }),
-            )),
-            MemoryType::ACPI_RECLAIM => memory_map_entries.push(Some(
+            ),
+            MemoryType::ACPI_RECLAIM => memory_map_entries.push(
                 kaboom::tags::MemoryEntry::ACPIReclaimable(kaboom::tags::MemoryData {
                     base: desc.phys_start,
                     pages: desc.page_count,
                 }),
-            )),
+            ),
             _ => {}
         }
     }
