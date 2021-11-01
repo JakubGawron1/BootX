@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) VisualDevelopment 2021-2021.
+ * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
+ */
+
 #![no_std]
 #![no_main]
 #![deny(warnings, unused_extern_crates, clippy::cargo)]
@@ -9,7 +14,7 @@
 extern crate alloc;
 
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::mem::size_of;
+use core::{cell::UnsafeCell, mem::size_of};
 
 use amd64::paging::PML4;
 use log::*;
@@ -206,24 +211,26 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .1
     {
         match desc.ty {
-            MemoryType::CONVENTIONAL => memory_map_entries.push(kaboom::tags::MemoryEntry::Usable(
-                kaboom::tags::MemoryData {
-                    base: desc.phys_start,
-                    pages: desc.page_count,
-                },
-            )),
-            MemoryType::LOADER_CODE | MemoryType::LOADER_DATA => memory_map_entries.push(
-                kaboom::tags::MemoryEntry::BootLoaderReclaimable(kaboom::tags::MemoryData {
+            MemoryType::CONVENTIONAL => memory_map_entries.push(UnsafeCell::new(
+                kaboom::tags::MemoryEntry::Usable(kaboom::tags::MemoryData {
                     base: desc.phys_start,
                     pages: desc.page_count,
                 }),
-            ),
-            MemoryType::ACPI_RECLAIM => memory_map_entries.push(
+            )),
+            MemoryType::LOADER_CODE | MemoryType::LOADER_DATA => {
+                memory_map_entries.push(UnsafeCell::new(
+                    kaboom::tags::MemoryEntry::BootLoaderReclaimable(kaboom::tags::MemoryData {
+                        base: desc.phys_start,
+                        pages: desc.page_count,
+                    }),
+                ))
+            }
+            MemoryType::ACPI_RECLAIM => memory_map_entries.push(UnsafeCell::new(
                 kaboom::tags::MemoryEntry::ACPIReclaimable(kaboom::tags::MemoryData {
                     base: desc.phys_start,
                     pages: desc.page_count,
                 }),
-            ),
+            )),
             _ => {}
         }
     }
