@@ -48,9 +48,9 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     info!("Welcome...");
 
-    helpers::open_esp(image);
+    let esp = helpers::open_esp(image);
 
-    let buffer = helpers::load_file("\\fuse.exec", FileMode::Read, FileAttribute::empty());
+    let buffer = helpers::load_file(esp, "\\fuse.exec", FileMode::Read, FileAttribute::empty());
 
     let elf = goblin::elf::Elf::parse(&buffer).expect("Failed to parse kernel elf");
 

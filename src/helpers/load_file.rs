@@ -10,9 +10,7 @@ use uefi::{
     proto::media::file::{Directory, File, FileAttribute, FileInfo, FileMode, FileType},
 };
 
-static mut ESP: Option<Directory> = None;
-
-pub fn open_esp(image: Handle) {
+pub fn open_esp(image: Handle) -> Directory {
     unsafe {
         let fs = uefi_services::system_table()
             .as_mut()
@@ -23,12 +21,17 @@ pub fn open_esp(image: Handle) {
             .get()
             .as_mut()
             .unwrap();
-        ESP = Some(fs.open_volume().unwrap().unwrap());
+
+        fs.open_volume().expect("Failed to open volume.").unwrap()
     }
 }
 
-pub fn load_file(path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u8> {
-    let esp = unsafe { ESP.as_mut().unwrap() };
+pub fn load_file(
+    mut esp: Directory,
+    path: &str,
+    mode: FileMode,
+    attributes: FileAttribute,
+) -> Vec<u8> {
     let mut file = match esp
         .open(path, mode, attributes)
         .expect_success(format!("File {} not found", path).as_str())
@@ -44,9 +47,7 @@ pub fn load_file(path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u
         0;
         file.get_boxed_info::<FileInfo>()
             .expect_success(format!("Failed to get {} file info", path).as_str())
-            .file_size()
-            .try_into()
-            .unwrap()
+            .file_size() as usize
     ];
 
     file.read(&mut buffer)
