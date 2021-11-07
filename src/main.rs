@@ -211,12 +211,14 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .1
     {
         match desc.ty {
-            MemoryType::CONVENTIONAL => memory_map_entries.push(UnsafeCell::new(
-                kaboom::tags::MemoryEntry::Usable(kaboom::tags::MemoryData {
-                    base: desc.phys_start,
-                    pages: desc.page_count,
-                }),
-            )),
+            MemoryType::CONVENTIONAL => {
+                memory_map_entries.push(UnsafeCell::new(kaboom::tags::MemoryEntry::Usable(
+                    kaboom::tags::MemoryData {
+                        base: desc.phys_start,
+                        pages: desc.page_count,
+                    },
+                )))
+            }
             MemoryType::LOADER_CODE | MemoryType::LOADER_DATA => {
                 memory_map_entries.push(UnsafeCell::new(
                     kaboom::tags::MemoryEntry::BootLoaderReclaimable(kaboom::tags::MemoryData {
@@ -225,12 +227,14 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
                     }),
                 ))
             }
-            MemoryType::ACPI_RECLAIM => memory_map_entries.push(UnsafeCell::new(
-                kaboom::tags::MemoryEntry::ACPIReclaimable(kaboom::tags::MemoryData {
-                    base: desc.phys_start,
-                    pages: desc.page_count,
-                }),
-            )),
+            MemoryType::ACPI_RECLAIM => {
+                memory_map_entries.push(UnsafeCell::new(
+                    kaboom::tags::MemoryEntry::ACPIReclaimable(kaboom::tags::MemoryData {
+                        base: desc.phys_start,
+                        pages: desc.page_count,
+                    }),
+                ))
+            }
             _ => {}
         }
     }
