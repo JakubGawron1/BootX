@@ -5,7 +5,7 @@
 
 #![no_std]
 #![no_main]
-#![deny(warnings, unused_extern_crates, clippy::cargo)]
+#![deny(warnings, unused_extern_crates, clippy::cargo, rust_2021_compatibility)]
 #![feature(asm)]
 #![feature(abi_efiapi)]
 #![feature(allocator_api)]
