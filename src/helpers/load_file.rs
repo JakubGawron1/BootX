@@ -47,10 +47,12 @@ pub fn load_file(
         0;
         file.get_boxed_info::<FileInfo>()
             .expect_success(format!("Failed to get {} file info", path).as_str())
-            .file_size() as usize
+            .file_size()
+            .try_into()
+            .unwrap()
     ];
 
-    file.read(&mut buffer)
+    file.read(buffer.as_mut_slice())
         .expect_success(format!("Failed to read {}.", path).as_str());
 
     buffer
