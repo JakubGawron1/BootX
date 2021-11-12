@@ -10,6 +10,7 @@
 #![feature(abi_efiapi)]
 #![feature(allocator_api)]
 #![feature(core_intrinsics)]
+#![feature(asm_const)]
 
 extern crate alloc;
 
