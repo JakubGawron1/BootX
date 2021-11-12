@@ -17,7 +17,7 @@ extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::{cell::UnsafeCell, mem::size_of};
 
-use amd64::paging::PML4;
+use amd64::paging::Pml4;
 use log::*;
 use uefi::{
     prelude::{entry, Boot, Handle, ResultExt, Status, SystemTable},
@@ -135,7 +135,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     info!("    2. Modifying paging mappings to map higher-half...");
 
     unsafe {
-        let pml4 = <amd64::paging::PageTable as PML4>::get();
+        let pml4 = <amd64::paging::PageTable as Pml4>::get();
         pml4.map_higher_half();
         pml4.set();
     }
