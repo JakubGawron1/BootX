@@ -17,7 +17,6 @@ extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::{cell::UnsafeCell, mem::size_of};
 
-use amd64::paging::Pml4;
 use log::*;
 use uefi::{
     prelude::{entry, Boot, Handle, ResultExt, Status, SystemTable},
@@ -199,7 +198,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
             .unwrap()
     };
 
-    tags.push(kaboom::tags::TagType::ACPI(rsdp));
+    tags.push(kaboom::tags::TagType::Acpi(rsdp));
 
     info!("{:#X?}", rsdp);
     info!("{:#X?}", explosion);
