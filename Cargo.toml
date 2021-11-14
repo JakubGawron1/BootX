@@ -9,7 +9,8 @@ edition = "2021"
 lto = "thin"
 
 [profile.release]
-lto = "thin"
+lto = true
+opt-level = 3
 
 [[bin]]
 name = "bootx64"
@@ -19,7 +20,7 @@ path = "src/main.rs"
 uefi = { version = "0.12.0", features = ["exts", "logger"] }
 uefi-services = "0.9.0"
 log = { version = "0.4.14", default-features = false }
-goblin = { version = "0.4.2", default-features = false, features = [
+goblin = { version = "0.4.3", default-features = false, features = [
     "elf32",
     "elf64",
     "endian_fd",
