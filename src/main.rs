@@ -40,7 +40,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         FileAttribute::empty(),
     );
 
-    let (kernel_main, _stack) = helpers::parse_elf::parse_elf(&buffer);
+    let (kernel_main, stack) = helpers::parse_elf::parse_elf(&buffer);
 
     let mut explosion = Box::new(kaboom::ExplosionResult::new(Default::default()));
     let mut tags = Vec::with_capacity(4);
@@ -77,9 +77,9 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     unsafe {
         asm!(
             "cli",
-            // "mov rsp, {}",
+            "mov rsp, {}",
             "call {}",
-            // in(reg) stack,
+            in(reg) stack,
             in(reg) kernel_main,
             in("rdi") Box::leak(explosion),
             options(noreturn)
