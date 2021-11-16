@@ -10,7 +10,6 @@ lto = "thin"
 
 [profile.release]
 lto = true
-opt-level = 3
 
 [[bin]]
 name = "bootx64"
