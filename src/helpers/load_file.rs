@@ -18,6 +18,7 @@ pub fn open_esp(image: Handle) -> Directory {
             .get_image_file_system(image)
             .unwrap()
             .unwrap()
+            .interface
             .get()
             .as_mut()
             .unwrap();

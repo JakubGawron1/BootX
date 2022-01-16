@@ -6,7 +6,6 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, unused_extern_crates, clippy::cargo, rust_2021_compatibility)]
-#![feature(asm)]
 #![feature(abi_efiapi)]
 #![feature(allocator_api)]
 #![feature(core_intrinsics)]
@@ -15,6 +14,7 @@
 extern crate alloc;
 
 use alloc::{boxed::Box, vec, vec::Vec};
+use core::arch::asm;
 
 use log::*;
 use uefi::{
@@ -52,11 +52,8 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     tags.push(kaboom::tags::TagType::Acpi(helpers::setup::get_rsdp()));
 
     info!("Exiting boot services and jumping to kernel...");
-    let mut mmap_buf = vec![
-        0;
-        system_table.boot_services().memory_map_size()
-            + 5 * core::mem::size_of::<uefi::table::boot::MemoryDescriptor>()
-    ];
+    let sizes = system_table.boot_services().memory_map_size();
+    let mut mmap_buf = vec![0; sizes.map_size + 2 * sizes.entry_size];
     let mut memory_map_entries = Vec::with_capacity(
         mmap_buf.capacity() / core::mem::size_of::<uefi::table::boot::MemoryDescriptor>() - 2,
     );

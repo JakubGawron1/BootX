@@ -1,3 +1,5 @@
+use core::arch::asm;
+
 use log::info;
 use uefi::ResultExt;
 
