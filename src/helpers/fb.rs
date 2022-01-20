@@ -16,18 +16,18 @@ pub fn fbinfo_from_gop(
         pixel_bitmask: match gop.current_mode_info().pixel_format() {
             uefi::proto::console::gop::PixelFormat::Rgb => {
                 PixelBitmask {
-                    red: 0x0000FF,
-                    green: 0x00FF00,
-                    blue: 0xFF0000,
-                    alpha: 0xFF000000,
+                    red: 0xFF000000,
+                    green: 0x00FF0000,
+                    blue: 0x0000FF00,
+                    alpha: 0x000000FF,
                 }
             }
             uefi::proto::console::gop::PixelFormat::Bgr => {
                 PixelBitmask {
-                    red: 0xFF0000,
-                    green: 0x00FF00,
-                    blue: 0x0000FF,
-                    alpha: 0xFF000000,
+                    red: 0x0000FF00,
+                    green: 0x00FF0000,
+                    blue: 0xFF000000,
+                    alpha: 0x000000FF,
                 }
             }
             uefi::proto::console::gop::PixelFormat::Bitmask => {
