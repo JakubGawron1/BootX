@@ -31,23 +31,25 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     info!("Welcome...");
     helpers::setup::setup_paging();
 
-    let esp = helpers::load_file::open_esp(image);
+    let esp = helpers::file::open_esp(image);
 
-    let buffer = helpers::load_file::load_file(
+    let buffer = helpers::file::load(
         esp,
         "\\System\\fuse.exec",
         FileMode::Read,
         FileAttribute::empty(),
     );
 
-    let (kernel_main, stack) = helpers::parse_elf::parse_elf(&buffer);
+    let mut mem_mgr = helpers::mem::MemoryManager::new();
+
+    let (kernel_main, stack) = helpers::parse_elf::parse_elf(&mut mem_mgr, &buffer);
 
     let mut explosion = Box::new(kaboom::ExplosionResult::new(Default::default()));
     let mut tags = Vec::with_capacity(4);
 
     tags.push(kaboom::tags::TagType::CommandLine(""));
     tags.push(kaboom::tags::TagType::FrameBuffer(Box::leak(
-        helpers::kaboom::fbinfo_from_gop(helpers::setup::get_gop()),
+        helpers::fb::fbinfo_from_gop(helpers::setup::get_gop()),
     )));
     tags.push(kaboom::tags::TagType::Acpi(helpers::setup::get_rsdp()));
 
@@ -63,7 +65,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .expect_success("Failed to exit boot services.")
         .1
     {
-        if let Some(ent) = helpers::kaboom::mem_type_from_desc(desc) {
+        if let Some(ent) = mem_mgr.mem_type_from_desc(desc) {
             memory_map_entries.push(ent)
         }
     }

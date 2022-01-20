@@ -1,7 +1,10 @@
 use log::info;
 use uefi::ResultExt;
 
-pub fn parse_elf(buffer: &[u8]) -> (kaboom::EntryPoint, *const u8) {
+pub fn parse_elf(
+    mem_mgr: &mut super::mem::MemoryManager,
+    buffer: &[u8],
+) -> (kaboom::EntryPoint, *const u8) {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
     info!("{:X?}", elf.header);
@@ -55,6 +58,11 @@ pub fn parse_elf(buffer: &[u8]) -> (kaboom::EntryPoint, *const u8) {
                 as usize,
             phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET
         );
+
+        mem_mgr.allocate((
+            phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET,
+            npages,
+        ));
 
         for (a, b) in dest
             .iter_mut()

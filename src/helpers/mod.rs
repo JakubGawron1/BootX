@@ -3,8 +3,9 @@
  * This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
  */
 
-pub mod kaboom;
-pub mod load_file;
+pub mod fb;
+pub mod file;
+pub mod mem;
 pub mod parse_elf;
 pub mod setup;
 

@@ -16,8 +16,7 @@ pub fn open_esp(image: Handle) -> Directory {
             .as_mut()
             .boot_services()
             .get_image_file_system(image)
-            .unwrap()
-            .unwrap()
+            .expect_success("Failed to get ESP")
             .interface
             .get()
             .as_mut()
@@ -27,12 +26,7 @@ pub fn open_esp(image: Handle) -> Directory {
     }
 }
 
-pub fn load_file(
-    mut esp: Directory,
-    path: &str,
-    mode: FileMode,
-    attributes: FileAttribute,
-) -> Vec<u8> {
+pub fn load(mut esp: Directory, path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u8> {
     let mut file = match esp
         .open(path, mode, attributes)
         .expect_success(format!("File {} not found", path).as_str())
@@ -53,7 +47,7 @@ pub fn load_file(
             .unwrap()
     ];
 
-    file.read(buffer.as_mut_slice())
+    file.read(&mut buffer)
         .expect_success(format!("Failed to read {}.", path).as_str());
 
     buffer
