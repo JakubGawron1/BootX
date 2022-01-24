@@ -6,10 +6,7 @@
 #![no_std]
 #![no_main]
 #![deny(warnings, unused_extern_crates, clippy::cargo, rust_2021_compatibility)]
-#![feature(abi_efiapi)]
-#![feature(allocator_api)]
-#![feature(core_intrinsics)]
-#![feature(asm_const)]
+#![feature(abi_efiapi, allocator_api, core_intrinsics, asm_const)]
 
 extern crate alloc;
 
