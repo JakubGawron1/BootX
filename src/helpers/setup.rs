@@ -1,5 +1,6 @@
 use core::arch::asm;
 
+use amd64::paging::pml4::Pml4;
 use log::info;
 use uefi::{proto::console::text::Color, ResultExt};
 
