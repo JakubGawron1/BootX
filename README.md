@@ -1,4 +1,4 @@
-# Firework Launcher
+# Firework Launcher [![Run lints](https://github.com/Firework-OS/FWLauncher/actions/workflows/run_lints.yml/badge.svg)](https://github.com/Firework-OS/FWLauncher/actions/workflows/run_lints.yml)
 
 The Firework UEFI boot-loader.
 
