@@ -21,17 +21,17 @@ use uefi::{
 
 mod helpers;
 
-#[entry]
-fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
+#[no_mangle]
+pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     uefi_services::init(&mut system_table).expect_success("Failed to initialize utilities");
     helpers::setup::init_output();
     info!("Welcome...");
     helpers::setup::setup_paging();
 
-    let esp = helpers::file::open_esp(image);
+    let mut esp = helpers::file::open_esp(image);
 
     let buffer = helpers::file::load(
-        esp,
+        &mut esp,
         "\\System\\fuse.exec",
         FileMode::Read,
         FileAttribute::empty(),

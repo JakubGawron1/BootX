@@ -26,7 +26,7 @@ pub fn open_esp(image: Handle) -> Directory {
     }
 }
 
-pub fn load(mut esp: Directory, path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u8> {
+pub fn load(esp: &mut Directory, path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u8> {
     let mut file = match esp
         .open(path, mode, attributes)
         .expect_success(format!("File {} not found", path).as_str())
@@ -49,6 +49,7 @@ pub fn load(mut esp: Directory, path: &str, mode: FileMode, attributes: FileAttr
 
     file.read(&mut buffer)
         .expect_success(format!("Failed to read {}.", path).as_str());
+    file.close();
 
     buffer
 }
