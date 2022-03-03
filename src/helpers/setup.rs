@@ -59,14 +59,15 @@ pub fn get_gop() -> &'static mut uefi::proto::console::gop::GraphicsOutput<'stat
 pub fn get_rsdp() -> &'static acpi::tables::Rsdp {
     unsafe {
         let mut cfg_table_iter = uefi_services::system_table().as_mut().config_table().iter();
-        (cfg_table_iter
+        ((cfg_table_iter
             .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
             .unwrap_or_else(|| {
                 cfg_table_iter
                     .find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
                     .expect("No ACPI found on the system!")
             })
-            .address as *const acpi::tables::Rsdp)
+            .address as usize
+            + amd64::paging::PHYS_VIRT_OFFSET) as *const acpi::tables::Rsdp)
             .as_ref()
             .unwrap()
     }
