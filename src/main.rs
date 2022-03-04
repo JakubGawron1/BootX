@@ -43,13 +43,10 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     let mut tags = Vec::with_capacity(4);
     info!("{:#X?}", explosion.as_ref() as *const _);
 
-    tags.push(kaboom::tags::TagType::CommandLine(""));
-    tags.push(kaboom::tags::TagType::FrameBuffer(
-        helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
-            helpers::setup::get_gop(),
-        ))),
-    ));
-    tags.push(kaboom::tags::TagType::Acpi(helpers::setup::get_rsdp()));
+    let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
+        helpers::setup::get_gop(),
+    )));
+    let rsdp = helpers::setup::get_rsdp();
 
     info!("Exiting boot services and jumping to kernel...");
     let sizes = system_table.boot_services().memory_map_size();
@@ -68,9 +65,13 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         }
     }
 
+    // Tags need be in order of logical operation
+    tags.push(kaboom::tags::TagType::CommandLine(""));
     tags.push(kaboom::tags::TagType::MemoryMap(
         helpers::phys_to_kern_slice_ref(memory_map_entries.leak()),
     ));
+    tags.push(kaboom::tags::TagType::FrameBuffer(fbinfo));
+    tags.push(kaboom::tags::TagType::Acpi(rsdp));
     explosion.tags = helpers::phys_to_kern_slice_ref(tags.leak());
 
     unsafe {
