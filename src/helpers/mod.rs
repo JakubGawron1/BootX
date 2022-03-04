@@ -7,13 +7,15 @@ pub mod mem;
 pub mod parse_elf;
 pub mod setup;
 
+use amd64::paging::pml4::Pml4 as Pml4Trait;
+
 use crate::alloc::boxed::Box;
 
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct Pml4(amd64::paging::PageTable);
 
-impl amd64::paging::pml4::Pml4 for Pml4 {
+impl Pml4Trait for Pml4 {
     const VIRT_OFF: usize = 0;
 
     fn get_entry(&mut self, offset: usize) -> &mut amd64::paging::PageTableEntry {
@@ -23,4 +25,16 @@ impl amd64::paging::pml4::Pml4 for Pml4 {
     fn alloc_entry() -> usize {
         Box::leak(Box::new(amd64::paging::PageTable::new())) as *mut _ as usize
     }
+}
+
+fn pa_to_kern_va<T>(v: *const T) -> *const T {
+    (v as usize + amd64::paging::PHYS_VIRT_OFFSET) as *const T
+}
+
+pub fn phys_to_kern_ref<T>(v: &'_ T) -> &'_ T {
+    unsafe { &*pa_to_kern_va(v) }
+}
+
+pub fn phys_to_kern_slice_ref<T>(v: &'_ [T]) -> &'_ [T] {
+    unsafe { core::slice::from_raw_parts(pa_to_kern_va(v.as_ptr()), v.len()) }
 }

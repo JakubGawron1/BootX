@@ -41,11 +41,14 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
 
     let mut explosion = Box::new(kaboom::ExplosionResult::new(Default::default()));
     let mut tags = Vec::with_capacity(4);
+    info!("{:#X?}", explosion.as_ref() as *const _);
 
     tags.push(kaboom::tags::TagType::CommandLine(""));
-    tags.push(kaboom::tags::TagType::FrameBuffer(Box::leak(
-        helpers::fb::fbinfo_from_gop(helpers::setup::get_gop()),
-    )));
+    tags.push(kaboom::tags::TagType::FrameBuffer(
+        helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
+            helpers::setup::get_gop(),
+        ))),
+    ));
     tags.push(kaboom::tags::TagType::Acpi(helpers::setup::get_rsdp()));
 
     info!("Exiting boot services and jumping to kernel...");
@@ -65,8 +68,10 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         }
     }
 
-    tags.push(kaboom::tags::TagType::MemoryMap(memory_map_entries.leak()));
-    explosion.tags = tags.leak();
+    tags.push(kaboom::tags::TagType::MemoryMap(
+        helpers::phys_to_kern_slice_ref(memory_map_entries.leak()),
+    ));
+    explosion.tags = helpers::phys_to_kern_slice_ref(tags.leak());
 
     unsafe {
         asm!(
@@ -75,7 +80,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
             "call {}",
             in(reg) stack,
             in(reg) kernel_main,
-            in("rdi") Box::leak(explosion),
+            in("rdi") helpers::phys_to_kern_ref(Box::leak(explosion)),
             options(noreturn)
         )
     }
