@@ -20,7 +20,7 @@ use uefi::{
 mod helpers;
 
 #[no_mangle]
-pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
+pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) {
     uefi_services::init(&mut system_table).expect_success("Failed to initialize utilities");
     helpers::setup::init_output();
     info!("Welcome...");

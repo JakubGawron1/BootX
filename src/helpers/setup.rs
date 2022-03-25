@@ -3,6 +3,7 @@
 
 use core::arch::asm;
 
+use acpi::tables::rsdp::Rsdp;
 use amd64::paging::pml4::Pml4;
 use log::info;
 use uefi::{proto::console::text::Color, ResultExt};
@@ -56,9 +57,9 @@ pub fn get_gop() -> &'static mut uefi::proto::console::gop::GraphicsOutput<'stat
     }
 }
 
-pub fn get_rsdp() -> &'static acpi::tables::Rsdp {
+pub fn get_rsdp() -> &'static Rsdp {
     let mut iter = unsafe { uefi_services::system_table().as_mut().config_table().iter() };
-    let rsdp: *const acpi::tables::Rsdp = iter
+    let rsdp: *const Rsdp = iter
         .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
         .unwrap_or_else(|| {
             iter.find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
