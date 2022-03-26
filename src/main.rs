@@ -83,8 +83,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     tags.push(kaboom::tags::TagType::Module {
         name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
             .unwrap(),
-        size: mod_buffer.len(),
-        addr: mod_buffer.as_ptr() as u64,
+        data: helpers::phys_to_kern_slice_ref(mod_buffer),
     });
     explosion.tags = helpers::phys_to_kern_slice_ref(tags.leak());
 
