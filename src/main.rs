@@ -21,7 +21,7 @@ mod helpers;
 
 #[no_mangle]
 pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) {
-    uefi_services::init(&mut system_table).expect_success("Failed to initialize utilities");
+    uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
     helpers::setup::init_output();
     info!("Welcome...");
     helpers::setup::setup_paging();
@@ -57,7 +57,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
 
     for desc in system_table
         .exit_boot_services(image, &mut mmap_buf)
-        .expect_success("Failed to exit boot services.")
+        .expect("Failed to exit boot services.")
         .1
     {
         if let Some(ent) = mem_mgr.mem_type_from_desc(desc) {

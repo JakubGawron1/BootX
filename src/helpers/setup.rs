@@ -6,20 +6,18 @@ use core::arch::asm;
 use acpi::tables::rsdp::Rsdp;
 use amd64::paging::pml4::Pml4;
 use log::info;
-use uefi::{proto::console::text::Color, ResultExt};
+use uefi::proto::console::text::Color;
 
 pub fn init_output() {
     unsafe {
         let stdout = uefi_services::system_table().as_mut().stdout();
-        stdout.reset(false).expect_success("Failed to reset stdout");
-        let desired_mode = stdout.modes().last().unwrap().unwrap();
-        stdout
-            .set_mode(desired_mode)
-            .expect_success("Failed to set mode");
+        stdout.reset(false).expect("Failed to reset stdout");
+        let desired_mode = stdout.modes().last().unwrap();
+        stdout.set_mode(desired_mode).expect("Failed to set mode");
         stdout
             .set_color(Color::White, Color::Black)
-            .expect_success("Failed to set color");
-        stdout.clear().expect_success("Failed to clear console");
+            .expect("Failed to set color");
+        stdout.clear().expect("Failed to clear console");
     }
 }
 
@@ -50,7 +48,7 @@ pub fn get_gop() -> &'static mut uefi::proto::console::gop::GraphicsOutput<'stat
             .as_mut()
             .boot_services()
             .locate_protocol::<uefi::proto::console::gop::GraphicsOutput>()
-            .expect_success("Failed to get GOP protocol")
+            .expect("Failed to get GOP protocol")
             .get()
             .as_mut()
             .unwrap()

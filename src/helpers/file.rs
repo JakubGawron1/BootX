@@ -1,11 +1,12 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use alloc::{format, vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 
 use uefi::{
     prelude::*,
     proto::media::file::{Directory, File, FileAttribute, FileInfo, FileMode, FileType},
+    CStr16,
 };
 
 pub fn open_esp(image: Handle) -> Directory {
@@ -14,22 +15,26 @@ pub fn open_esp(image: Handle) -> Directory {
             .as_mut()
             .boot_services()
             .get_image_file_system(image)
-            .expect_success("Failed to get ESP")
+            .expect("Failed to get ESP")
             .interface
             .get()
             .as_mut()
             .unwrap();
 
-        fs.open_volume().expect("Failed to open volume.").unwrap()
+        fs.open_volume().expect("Failed to open volume.")
     }
 }
 
 pub fn load(esp: &mut Directory, path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u8> {
+    let mut buf = [0; 512];
     let mut file = match esp
-        .open(path, mode, attributes)
-        .expect_success(format!("File {} not found", path).as_str())
+        .open(
+            CStr16::from_str_with_buf(path, &mut buf).unwrap(),
+            mode,
+            attributes,
+        )
+        .unwrap_or_else(|_| panic!("File {} not found", path))
         .into_type()
-        .unwrap()
         .unwrap()
     {
         FileType::Regular(f) => f,
@@ -39,14 +44,14 @@ pub fn load(esp: &mut Directory, path: &str, mode: FileMode, attributes: FileAtt
     let mut buffer = vec![
         0;
         file.get_boxed_info::<FileInfo>()
-            .expect_success(format!("Failed to get {} file info", path).as_str())
+            .unwrap_or_else(|_| panic!("Failed to get {} file info", path))
             .file_size()
             .try_into()
             .unwrap()
     ];
 
     file.read(&mut buffer)
-        .expect_success(format!("Failed to read {}.", path).as_str());
+        .unwrap_or_else(|_| panic!("Failed to read {}.", path));
     file.close();
 
     buffer

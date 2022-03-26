@@ -2,7 +2,6 @@
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use log::info;
-use uefi::ResultExt;
 
 pub fn parse_elf(
     mem_mgr: &mut super::mem::MemoryManager,
@@ -57,7 +56,7 @@ pub fn parse_elf(
                     uefi::table::boot::MemoryType::LOADER_DATA,
                     npages,
                 )
-                .expect_success("Failed to load section above. Sections might be misaligned.")
+                .expect("Failed to load section above. Sections might be misaligned.")
                 as usize,
             phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET
         );
