@@ -35,12 +35,20 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         FileAttribute::empty(),
     );
 
+    let mod_buffer = helpers::file::load(
+        &mut esp,
+        "\\System\\test.raw",
+        FileMode::Read,
+        FileAttribute::empty(),
+    )
+    .leak();
+
     let mut mem_mgr = helpers::mem::MemoryManager::new();
 
     let (kernel_main, stack) = helpers::parse_elf::parse_elf(&mut mem_mgr, &buffer);
 
     let mut explosion = Box::new(kaboom::ExplosionResult::new(Default::default()));
-    let mut tags = Vec::with_capacity(4);
+    let mut tags = Vec::with_capacity(5);
     info!("{:#X?}", explosion.as_ref() as *const _);
 
     let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
@@ -72,6 +80,11 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     ));
     tags.push(kaboom::tags::TagType::FrameBuffer(fbinfo));
     tags.push(kaboom::tags::TagType::Acpi(rsdp));
+    tags.push(kaboom::tags::TagType::Module {
+        name: "testaudio",
+        size: mod_buffer.len(),
+        addr: mod_buffer.as_ptr() as u64,
+    });
     explosion.tags = helpers::phys_to_kern_slice_ref(tags.leak());
 
     unsafe {
