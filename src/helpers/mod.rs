@@ -1,15 +1,15 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
+use amd64::paging::pml4::Pml4 as Pml4Trait;
+
+use crate::alloc::boxed::Box;
+
 pub mod fb;
 pub mod file;
 pub mod mem;
 pub mod parse_elf;
 pub mod setup;
-
-use amd64::paging::pml4::Pml4 as Pml4Trait;
-
-use crate::alloc::boxed::Box;
 
 #[repr(transparent)]
 #[derive(Debug)]

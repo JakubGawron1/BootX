@@ -5,7 +5,7 @@ use core::arch::asm;
 
 use acpi::tables::rsdp::Rsdp;
 use amd64::paging::pml4::Pml4;
-use log::info;
+use log::debug;
 use uefi::proto::console::text::Color;
 
 pub fn init_output() {
@@ -22,8 +22,8 @@ pub fn init_output() {
 }
 
 pub fn setup_paging() {
-    info!("Setting up higher-half paging mappings:");
-    info!("    1. Turning off write protection...");
+    debug!("Setting up higher-half paging mappings:");
+    debug!("    1. Turning off write protection...");
 
     unsafe {
         asm!("mov rax, cr0",
@@ -33,7 +33,7 @@ pub fn setup_paging() {
         );
     }
 
-    info!("    2. Modifying paging mappings to map higher-half...");
+    debug!("    2. Modifying paging mappings to map higher-half...");
 
     unsafe {
         let pml4 = super::Pml4::get();

@@ -1,7 +1,7 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use log::info;
+use log::debug;
 
 pub fn parse_elf(
     mem_mgr: &mut super::mem::MemoryManager,
@@ -9,7 +9,7 @@ pub fn parse_elf(
 ) -> (kaboom::EntryPoint, *const u8) {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
-    info!("{:X?}", elf.header);
+    debug!("{:X?}", elf.header);
     assert!(elf.is_64, "Only ELF64");
     assert_eq!(elf.header.e_machine, goblin::elf::header::EM_X86_64);
     assert!(elf.little_endian, "Only little-endian ELFs");
@@ -18,7 +18,7 @@ pub fn parse_elf(
         "Only higher-half kernels"
     );
 
-    info!("Parsing program headers: ");
+    debug!("Parsing program headers: ");
     for phdr in elf
         .program_headers
         .iter()
@@ -40,7 +40,7 @@ pub fn parse_elf(
             )
         };
         let npages = (memsz + 0xFFF) as usize / 0x1000;
-        info!(
+        debug!(
             "vaddr: {:#X}, paddr: {:#X}, npages: {:#X}",
             phdr.p_vaddr,
             phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET,
@@ -93,7 +93,7 @@ pub fn parse_elf(
             .unwrap()
     };
 
-    info!("{:#X?}", explosion_fuel);
+    debug!("{:#X?}", explosion_fuel);
 
     (
         unsafe { core::mem::transmute(elf.entry as *const ()) },

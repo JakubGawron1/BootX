@@ -8,6 +8,8 @@
 
 extern crate alloc;
 
+mod helpers;
+
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::arch::asm;
 
@@ -16,8 +18,6 @@ use uefi::{
     prelude::*,
     proto::media::file::{FileAttribute, FileMode},
 };
-
-mod helpers;
 
 #[no_mangle]
 pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) {
@@ -42,6 +42,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         FileAttribute::empty(),
     )
     .leak();
+    debug!("{:#X?}", mod_buffer.as_ptr());
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
 
@@ -49,7 +50,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
 
     let mut explosion = Box::new(kaboom::ExplosionResult::new(Default::default()));
     let mut tags = Vec::with_capacity(5);
-    info!("{:#X?}", explosion.as_ref() as *const _);
+    debug!("{:#X?}", explosion.as_ref() as *const _);
 
     let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
         helpers::setup::get_gop(),
