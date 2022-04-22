@@ -9,6 +9,8 @@ pub fn fbinfo_from_gop(
     gop: &'static mut uefi::proto::console::gop::GraphicsOutput<'static>,
 ) -> Box<FrameBufferInfo> {
     Box::new(FrameBufferInfo {
+        base: (gop.frame_buffer().as_mut_ptr() as usize + amd64::paging::PHYS_VIRT_OFFSET)
+            as *mut u32,
         resolution: ScreenRes::new(gop.current_mode_info().resolution()),
         pixel_format: match gop.current_mode_info().pixel_format() {
             uefi::proto::console::gop::PixelFormat::Rgb => PixelFormat::Rgb,
@@ -49,6 +51,5 @@ pub fn fbinfo_from_gop(
             _ => panic!("Blt-only mode not supported."),
         },
         pitch: gop.current_mode_info().stride(),
-        base: gop.frame_buffer().as_mut_ptr() as *mut u32,
     })
 }
