@@ -75,7 +75,11 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     }
 
     // Tags need be in order of logical operation
-    tags.push(kaboom::tags::TagType::CommandLine(""));
+    tags.push(kaboom::tags::TagType::SpecialisedSettings(
+        kaboom::tags::SpecialisedSettings {
+            verbose: cfg!(debug_assertions),
+        },
+    ));
     tags.push(kaboom::tags::TagType::MemoryMap(
         helpers::phys_to_kern_slice_ref(memory_map_entries.leak()),
     ));
