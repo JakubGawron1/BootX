@@ -81,11 +81,12 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     ));
     tags.push(kaboom::tags::TagType::FrameBuffer(fbinfo));
     tags.push(kaboom::tags::TagType::Acpi(rsdp));
-    tags.push(kaboom::tags::TagType::Module {
+    tags.push(kaboom::tags::TagType::Module(kaboom::tags::Module {
         name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
             .unwrap(),
+        type_: kaboom::tags::ModuleType::Audio,
         data: helpers::phys_to_kern_slice_ref(mod_buffer),
-    });
+    }));
     explosion.tags = helpers::phys_to_kern_slice_ref(tags.leak());
 
     unsafe {
