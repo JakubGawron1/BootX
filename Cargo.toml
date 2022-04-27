@@ -5,9 +5,6 @@ authors = ["VisualDevelopment"]
 publish = false
 edition = "2021"
 
-[profile.dev]
-lto = "thin"
-
 [profile.release]
 lto = true
 
