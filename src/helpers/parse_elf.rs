@@ -29,9 +29,9 @@ pub fn parse_elf(
             "Only higher-half kernels."
         );
 
-        let offset: usize = phdr.p_offset.try_into().unwrap();
-        let memsz = phdr.p_memsz.try_into().unwrap();
-        let file_size: usize = phdr.p_filesz.try_into().unwrap();
+        let offset = phdr.p_offset as usize;
+        let memsz = phdr.p_memsz as usize;
+        let file_size = phdr.p_filesz as usize;
         let src = &buffer[offset..(offset + file_size)];
         let dest = unsafe {
             core::slice::from_raw_parts_mut(
@@ -39,7 +39,7 @@ pub fn parse_elf(
                 memsz,
             )
         };
-        let npages = (memsz + 0xFFF) as usize / 0x1000;
+        let npages = (memsz + 0xFFF) / 0x1000;
         debug!(
             "vaddr: {:#X}, paddr: {:#X}, npages: {:#X}",
             phdr.p_vaddr,
