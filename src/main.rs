@@ -13,7 +13,7 @@ mod helpers;
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::arch::asm;
 
-use log::*;
+use log::{debug, info, LevelFilter};
 use uefi::{
     prelude::*,
     proto::media::file::{FileAttribute, FileMode},
@@ -22,6 +22,7 @@ use uefi::{
 #[no_mangle]
 pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) {
     uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
+    log::set_max_level(LevelFilter::Trace);
     helpers::setup::init_output();
     info!("Welcome...");
     helpers::setup::setup_paging();
