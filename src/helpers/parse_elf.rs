@@ -3,10 +3,7 @@
 
 use log::debug;
 
-pub fn parse_elf(
-    mem_mgr: &mut super::mem::MemoryManager,
-    buffer: &[u8],
-) -> (kaboom::EntryPoint, *const u8) {
+pub fn parse_elf(mem_mgr: &mut super::mem::MemoryManager, buffer: &[u8]) -> kaboom::EntryPoint {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
     debug!("{:X?}", elf.header);
@@ -74,29 +71,5 @@ pub fn parse_elf(
         }
     }
 
-    let bss = elf
-        .section_headers
-        .iter()
-        .find(|shdr| elf.shdr_strtab.get_at(shdr.sh_name).unwrap_or_default() == ".bss")
-        .expect("No .bss section found");
-    unsafe {
-        (bss.sh_addr as *mut u8).write_bytes(0, bss.sh_size.try_into().unwrap());
-    }
-
-    let explosion_fuel = unsafe {
-        (elf.section_headers
-            .iter()
-            .find(|shdr| elf.shdr_strtab.get_at(shdr.sh_name).unwrap_or_default() == ".kaboom")
-            .expect("No .kaboom section found")
-            .sh_addr as *const kaboom::ExplosionFuel)
-            .as_ref()
-            .unwrap()
-    };
-
-    debug!("{:#X?}", explosion_fuel);
-
-    (
-        unsafe { core::mem::transmute(elf.entry as *const ()) },
-        explosion_fuel.stack,
-    )
+    unsafe { core::mem::transmute(elf.entry as *const ()) }
 }
