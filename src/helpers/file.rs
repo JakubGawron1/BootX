@@ -25,14 +25,14 @@ pub fn open_esp(image: Handle) -> Directory {
     }
 }
 
-pub fn load(esp: &mut Directory, path: &str, mode: FileMode, attributes: FileAttribute) -> Vec<u8> {
-    let mut buf = [0; 512];
+pub fn load(
+    esp: &mut Directory,
+    path: &CStr16,
+    mode: FileMode,
+    attributes: FileAttribute,
+) -> Vec<u8> {
     let mut file = match esp
-        .open(
-            CStr16::from_str_with_buf(path, &mut buf).unwrap(),
-            mode,
-            attributes,
-        )
+        .open(path, mode, attributes)
         .unwrap_or_else(|_| panic!("File {} not found", path))
         .into_type()
         .unwrap()
