@@ -49,12 +49,9 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     let kernel_main = helpers::parse_elf::parse_elf(&mut mem_mgr, &buffer);
 
     let mut stack = Vec::new();
-    stack.resize(0x5_0000, 0u8);
+    stack.resize(0x2000, 0u8);
     let stack = (stack.leak().as_ptr() as usize + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
-    mem_mgr.allocate((
-        stack as usize - amd64::paging::KERNEL_VIRT_OFFSET,
-        (0x5_0000 + 0xFFF) / 0x1000,
-    ));
+    mem_mgr.allocate((stack as usize - amd64::paging::KERNEL_VIRT_OFFSET, 2));
 
     let mut explosion = Box::new(kaboom::Explosion::new(Default::default()));
     let mut tags = Vec::with_capacity(5);
