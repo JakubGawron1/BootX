@@ -19,35 +19,28 @@ pub fn fbinfo_from_gop(
             _ => panic!("Blt-only mode not supported."),
         },
         pixel_bitmask: match gop.current_mode_info().pixel_format() {
-            uefi::proto::console::gop::PixelFormat::Rgb => {
-                PixelBitmask {
-                    red: 0xFF000000,
-                    green: 0x00FF0000,
-                    blue: 0x0000FF00,
-                    alpha: 0x000000FF,
-                }
-            }
-            uefi::proto::console::gop::PixelFormat::Bgr => {
-                PixelBitmask {
-                    red: 0x0000FF00,
-                    green: 0x00FF0000,
-                    blue: 0xFF000000,
-                    alpha: 0x000000FF,
-                }
-            }
-            uefi::proto::console::gop::PixelFormat::Bitmask => {
-                gop.current_mode_info()
-                    .pixel_bitmask()
-                    .map(|v| {
-                        PixelBitmask {
-                            red: v.red,
-                            green: v.green,
-                            blue: v.blue,
-                            alpha: v.reserved,
-                        }
-                    })
-                    .unwrap()
-            }
+            uefi::proto::console::gop::PixelFormat::Rgb => PixelBitmask {
+                red: 0xFF000000,
+                green: 0x00FF0000,
+                blue: 0x0000FF00,
+                alpha: 0x000000FF,
+            },
+            uefi::proto::console::gop::PixelFormat::Bgr => PixelBitmask {
+                red: 0x0000FF00,
+                green: 0x00FF0000,
+                blue: 0xFF000000,
+                alpha: 0x000000FF,
+            },
+            uefi::proto::console::gop::PixelFormat::Bitmask => gop
+                .current_mode_info()
+                .pixel_bitmask()
+                .map(|v| PixelBitmask {
+                    red: v.red,
+                    green: v.green,
+                    blue: v.blue,
+                    alpha: v.reserved,
+                })
+                .unwrap(),
             _ => panic!("Blt-only mode not supported."),
         },
         pitch: gop.current_mode_info().stride(),
