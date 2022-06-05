@@ -16,8 +16,8 @@ path = "src/main.rs"
 uefi = { version = "0.16.0", features = ["exts", "logger"] }
 uefi-services = "0.13.0"
 log = { version = "0.4.17", default-features = false, features = [
+    "release_max_level_debug",
     "max_level_trace",
-    "release_max_level_info",
 ] }
 goblin = { version = "0.5.1", default-features = false, features = [
     "elf32",
