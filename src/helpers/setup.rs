@@ -3,8 +3,8 @@
 
 use core::arch::asm;
 
-use acpi::tables::rsdp::Rsdp;
-use amd64::paging::pml4::Pml4;
+use acpi::tables::rsdp::RSDP;
+use amd64::paging::pml4::PML4;
 use log::debug;
 use uefi::proto::console::text::Color;
 
@@ -36,7 +36,7 @@ pub fn setup_paging() {
     debug!("    2. Modifying paging mappings to map higher-half...");
 
     unsafe {
-        let pml4 = super::Pml4::get();
+        let pml4 = super::PML4::get();
         pml4.map_higher_half();
         pml4.set();
     }
@@ -55,9 +55,9 @@ pub fn get_gop() -> &'static mut uefi::proto::console::gop::GraphicsOutput<'stat
     }
 }
 
-pub fn get_rsdp() -> &'static Rsdp {
+pub fn get_rsdp() -> &'static RSDP {
     let mut iter = unsafe { uefi_services::system_table().as_mut().config_table().iter() };
-    let rsdp: *const Rsdp = iter
+    let rsdp: *const RSDP = iter
         .find(|ent| ent.guid == uefi::table::cfg::ACPI2_GUID)
         .unwrap_or_else(|| {
             iter.find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)

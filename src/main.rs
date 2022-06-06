@@ -53,7 +53,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     let stack = (stack.leak().as_ptr() as usize + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
     mem_mgr.allocate((stack as usize - amd64::paging::KERNEL_VIRT_OFFSET, 2));
 
-    let mut explosion = Box::new(kaboom::Explosion::new(Default::default()));
+    let mut explosion = Box::new(kaboom::BootInfo::new(Default::default()));
     let mut tags = Vec::with_capacity(5);
     trace!("{:#X?}", explosion.as_ref() as *const _);
 
@@ -89,14 +89,13 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         helpers::phys_to_kern_slice_ref(memory_map_entries.leak()),
     ));
     tags.push(kaboom::tags::TagType::FrameBuffer(fbinfo));
-    tags.push(kaboom::tags::TagType::Acpi(rsdp));
+    tags.push(kaboom::tags::TagType::RSDPPtr(rsdp));
     tags.push(kaboom::tags::TagType::Module(
-        kaboom::tags::module::Module {
+        kaboom::tags::module::Module::Audio(kaboom::tags::module::ModuleInner {
             name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
                 .unwrap(),
-            type_: kaboom::tags::module::ModuleType::Audio,
             data: helpers::phys_to_kern_slice_ref(mod_buffer),
-        },
+        }),
     ));
     explosion.tags = helpers::phys_to_kern_slice_ref(tags.leak());
 

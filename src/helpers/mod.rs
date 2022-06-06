@@ -1,8 +1,6 @@
 //! Copyright (c) VisualDevelopment 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
-use amd64::paging::pml4::Pml4 as Pml4Trait;
-
 use crate::alloc::boxed::Box;
 
 pub mod fb;
@@ -13,9 +11,9 @@ pub mod setup;
 
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct Pml4(amd64::paging::PageTable);
+pub struct PML4(amd64::paging::PageTable);
 
-impl Pml4Trait for Pml4 {
+impl amd64::paging::pml4::PML4 for PML4 {
     const VIRT_OFF: usize = 0;
 
     fn get_entry(&mut self, offset: usize) -> &mut amd64::paging::PageTableEntry {

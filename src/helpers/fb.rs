@@ -13,8 +13,8 @@ pub fn fbinfo_from_gop(
             as *mut u32,
         resolution: ScreenRes::new(gop.current_mode_info().resolution()),
         pixel_format: match gop.current_mode_info().pixel_format() {
-            uefi::proto::console::gop::PixelFormat::Rgb => PixelFormat::Rgb,
-            uefi::proto::console::gop::PixelFormat::Bgr => PixelFormat::Bgr,
+            uefi::proto::console::gop::PixelFormat::Rgb => PixelFormat::RedGreenBlue,
+            uefi::proto::console::gop::PixelFormat::Bgr => PixelFormat::BlueGreenRed,
             uefi::proto::console::gop::PixelFormat::Bitmask => PixelFormat::Bitmask,
             _ => panic!("Blt-only mode not supported."),
         },
