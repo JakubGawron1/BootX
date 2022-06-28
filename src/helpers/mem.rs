@@ -7,7 +7,7 @@ use kaboom::tags::memory_map::{MemoryData, MemoryEntry};
 
 #[derive(Debug)]
 pub struct MemoryManager {
-    entries: Vec<usize>,
+    entries: Vec<(usize, usize)>,
 }
 
 impl MemoryManager {
@@ -18,7 +18,7 @@ impl MemoryManager {
     }
 
     pub fn allocate(&mut self, ent: (usize, usize)) {
-        self.entries.push(ent.0 + ent.1)
+        self.entries.push(ent)
     }
 
     pub fn mem_type_from_desc(
@@ -34,23 +34,23 @@ impl MemoryManager {
             uefi::table::boot::MemoryType::CONVENTIONAL => Some(MemoryEntry::Usable(data)),
             uefi::table::boot::MemoryType::LOADER_CODE
             | uefi::table::boot::MemoryType::LOADER_DATA => {
-                let mut ret = Some(MemoryEntry::BootLoaderReclaimable(data));
+                let mut ret = MemoryEntry::BootLoaderReclaimable(data);
 
-                for ent in &self.entries {
+                for (base, size) in &self.entries {
                     let top = data.base + data.length;
-                    if data.base < *ent {
-                        if top > *ent {
-                            data.length -= ent - data.base;
-                            data.base += ent;
-                            ret = Some(MemoryEntry::BootLoaderReclaimable(data));
+                    if data.base < (base + size) {
+                        if top > (base + size) {
+                            data.length -= size;
+                            data.base += size;
+                            ret = MemoryEntry::BootLoaderReclaimable(data);
                         } else {
-                            ret = Some(MemoryEntry::KernelOrModule(data));
+                            ret = MemoryEntry::KernelOrModule(data);
                         }
 
                         break;
                     }
                 }
-                ret
+                Some(ret)
             }
             uefi::table::boot::MemoryType::ACPI_RECLAIM => Some(MemoryEntry::ACPIReclaimable(data)),
             _ => None,

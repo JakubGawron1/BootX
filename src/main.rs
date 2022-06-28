@@ -45,13 +45,14 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     trace!("{:#X?}", mod_buffer.as_ptr());
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
+    mem_mgr.allocate((mod_buffer.as_ptr() as usize, mod_buffer.len()));
 
     let kernel_main = helpers::parse_elf::parse_elf(&mut mem_mgr, &buffer);
 
     let mut stack = Vec::new();
     stack.resize(0x2000, 0u8);
     let stack = (stack.leak().as_ptr() as usize + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
-    mem_mgr.allocate((stack as usize - amd64::paging::KERNEL_VIRT_OFFSET, 2));
+    mem_mgr.allocate((stack as usize - amd64::paging::KERNEL_VIRT_OFFSET, 0x2000));
 
     let mut explosion = Box::new(kaboom::BootInfo::new(Default::default()));
     let mut tags = Vec::with_capacity(5);
@@ -69,15 +70,15 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         mmap_buf.capacity() / core::mem::size_of::<uefi::table::boot::MemoryDescriptor>() - 2,
     );
 
-    for desc in system_table
+    system_table
         .exit_boot_services(image, &mut mmap_buf)
         .expect("Failed to exit boot services.")
         .1
-    {
-        if let Some(ent) = mem_mgr.mem_type_from_desc(desc) {
-            memory_map_entries.push(ent)
-        }
-    }
+        .for_each(|v| {
+            if let Some(v) = mem_mgr.mem_type_from_desc(v) {
+                memory_map_entries.push(v);
+            }
+        });
 
     // Tags need be in order of logical operation
     tags.push(kaboom::tags::TagType::SpecialisedSettings(
