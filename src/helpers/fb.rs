@@ -1,9 +1,9 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use alloc::boxed::Box;
 
-use kaboom::tags::frame_buffer::{FrameBufferInfo, PixelBitmask, PixelFormat, ScreenRes};
+use sulfur_dioxide::tags::frame_buffer::{FrameBufferInfo, PixelBitmask, PixelFormat, ScreenRes};
 
 pub fn fbinfo_from_gop(
     gop: &'static mut uefi::proto::console::gop::GraphicsOutput<'static>,

@@ -1,9 +1,12 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 use log::debug;
 
-pub fn parse_elf(mem_mgr: &mut super::mem::MemoryManager, buffer: &[u8]) -> kaboom::EntryPoint {
+pub fn parse_elf(
+    mem_mgr: &mut super::mem::MemoryManager,
+    buffer: &[u8],
+) -> sulfur_dioxide::EntryPoint {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
     debug!("{:X?}", elf.header);

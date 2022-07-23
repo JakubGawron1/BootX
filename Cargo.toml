@@ -1,7 +1,7 @@
 [package]
-name = "fwlauncher"
+name = "bootx"
 version = "0.1.0"
-authors = ["VisualDevelopment"]
+authors = ["ChefKiss Inc"]
 publish = false
 edition = "2021"
 
@@ -24,6 +24,6 @@ goblin = { version = "0.5.2", default-features = false, features = [
     "elf64",
     "endian_fd",
 ] }
-amd64 = { path = "../AMD64" }
-acpi = { path = "../ACPI" }
-kaboom = { path = "../Kaboom" }
+amd64 = { path = "../AMD64Lib" }
+acpi = { path = "../ACPILib" }
+sulfur_dioxide = { path = "../SulfurDioxide" }

@@ -1,4 +1,4 @@
-//! Copyright (c) VisualDevelopment 2021-2022.
+//! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives licence.
 
 #![no_std]
@@ -30,7 +30,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
 
     let buffer = helpers::file::load(
         &mut esp,
-        cstr16!("\\System\\fuse.exec"),
+        cstr16!("\\System\\cardboard.exec"),
         FileMode::Read,
         FileAttribute::empty(),
     );
@@ -54,7 +54,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     let stack = (stack.leak().as_ptr() as usize + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
     mem_mgr.allocate((stack as usize - amd64::paging::KERNEL_VIRT_OFFSET, 0x2000));
 
-    let mut explosion = Box::new(kaboom::BootInfo::new(Default::default()));
+    let mut explosion = Box::new(sulfur_dioxide::BootInfo::new(Default::default()));
     let mut tags = Vec::with_capacity(5);
     trace!("{:#X?}", explosion.as_ref() as *const _);
 
@@ -81,18 +81,18 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         });
 
     // Tags need be in order of logical operation
-    tags.push(kaboom::tags::TagType::SpecialisedSettings(
-        kaboom::tags::SpecialisedSettings {
+    tags.push(sulfur_dioxide::tags::TagType::SpecialisedSettings(
+        sulfur_dioxide::tags::SpecialisedSettings {
             verbose: cfg!(debug_assertions),
         },
     ));
-    tags.push(kaboom::tags::TagType::MemoryMap(
+    tags.push(sulfur_dioxide::tags::TagType::MemoryMap(
         helpers::phys_to_kern_slice_ref(memory_map_entries.leak()),
     ));
-    tags.push(kaboom::tags::TagType::FrameBuffer(fbinfo));
-    tags.push(kaboom::tags::TagType::RSDPPtr(rsdp));
-    tags.push(kaboom::tags::TagType::Module(
-        kaboom::tags::module::Module::Audio(kaboom::tags::module::ModuleInner {
+    tags.push(sulfur_dioxide::tags::TagType::FrameBuffer(fbinfo));
+    tags.push(sulfur_dioxide::tags::TagType::RSDPPtr(rsdp));
+    tags.push(sulfur_dioxide::tags::TagType::Module(
+        sulfur_dioxide::tags::module::Module::Audio(sulfur_dioxide::tags::module::ModuleInner {
             name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
                 .unwrap(),
             data: helpers::phys_to_kern_slice_ref(mod_buffer),
