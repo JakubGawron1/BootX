@@ -9,10 +9,6 @@ pub mod mem;
 pub mod parse_elf;
 pub mod setup;
 
-#[no_mangle]
-#[used(linker)]
-static _fltused: i32 = 0;
-
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct PML4(amd64::paging::PageTable);
