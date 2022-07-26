@@ -38,7 +38,7 @@ impl MemoryManager {
 
                 for (base, size) in &self.entries {
                     let top = data.base + data.length;
-                    if data.base < (base + size) {
+                    if data.base <= (base + size) {
                         if top > (base + size) {
                             data.length -= size;
                             data.base += size;
