@@ -33,7 +33,8 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
         cstr16!("\\System\\cardboard.exec"),
         FileMode::Read,
         FileAttribute::empty(),
-    );
+    )
+    .leak();
 
     let mod_buffer = helpers::file::load(
         &mut esp,
@@ -47,21 +48,36 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     let mut mem_mgr = helpers::mem::MemoryManager::new();
     mem_mgr.allocate((mod_buffer.as_ptr() as usize, mod_buffer.len()));
 
-    let kernel_main = helpers::parse_elf::parse_elf(&mut mem_mgr, &buffer);
+    let kernel_main = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
 
     let mut stack = Vec::new();
     stack.resize(0x14000, 0u8);
     let stack = (stack.leak().as_ptr() as usize + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
     mem_mgr.allocate((stack as usize - amd64::paging::KERNEL_VIRT_OFFSET, 0x2000));
 
-    let mut explosion = Box::new(sulfur_dioxide::BootInfo::new(Default::default()));
-    let mut tags = Vec::with_capacity(5);
-    trace!("{:#X?}", explosion.as_ref() as *const _);
-
     let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
         helpers::setup::get_gop(),
     )));
     let rsdp = helpers::setup::get_rsdp();
+
+    let mut explosion = Box::new(sulfur_dioxide::BootInfo::new(
+        buffer,
+        sulfur_dioxide::SpecialisedSettings {
+            verbose: cfg!(debug_assertions),
+        },
+        Some(fbinfo),
+        rsdp,
+    ));
+
+    let modules = vec![sulfur_dioxide::module::Module::Audio(
+        sulfur_dioxide::module::ModuleInner {
+            name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
+                .unwrap(),
+            data: helpers::phys_to_kern_slice_ref(mod_buffer),
+        },
+    )];
+
+    trace!("{:#X?}", explosion.as_ref() as *const _);
 
     info!("Exiting boot services and jumping to kernel...");
     let sizes = system_table.boot_services().memory_map_size();
@@ -80,25 +96,8 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
             }
         });
 
-    // Tags need be in order of logical operation
-    tags.push(sulfur_dioxide::tags::TagType::SpecialisedSettings(
-        sulfur_dioxide::tags::SpecialisedSettings {
-            verbose: cfg!(debug_assertions),
-        },
-    ));
-    tags.push(sulfur_dioxide::tags::TagType::MemoryMap(
-        helpers::phys_to_kern_slice_ref(memory_map_entries.leak()),
-    ));
-    tags.push(sulfur_dioxide::tags::TagType::FrameBuffer(fbinfo));
-    tags.push(sulfur_dioxide::tags::TagType::RSDPPtr(rsdp));
-    tags.push(sulfur_dioxide::tags::TagType::Module(
-        sulfur_dioxide::tags::module::Module::Audio(sulfur_dioxide::tags::module::ModuleInner {
-            name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
-                .unwrap(),
-            data: helpers::phys_to_kern_slice_ref(mod_buffer),
-        }),
-    ));
-    explosion.tags = helpers::phys_to_kern_slice_ref(tags.leak());
+    explosion.memory_map = helpers::phys_to_kern_slice_ref(memory_map_entries.leak());
+    explosion.modules = modules.leak();
 
     unsafe {
         asm!(
