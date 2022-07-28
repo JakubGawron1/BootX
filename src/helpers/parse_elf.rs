@@ -1,12 +1,17 @@
 //! Copyright (c) ChefKiss Inc 2021-2022.
 //! This project is licensed by the Creative Commons Attribution-NoCommercial-NoDerivatives license.
 
+use alloc::{borrow::ToOwned, boxed::Box, vec::Vec};
+
 use log::debug;
 
 pub fn parse_elf(
     mem_mgr: &mut super::mem::MemoryManager,
     buffer: &[u8],
-) -> sulfur_dioxide::EntryPoint {
+) -> (
+    sulfur_dioxide::EntryPoint,
+    Vec<sulfur_dioxide::symbol::KernSymbol>,
+) {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
     debug!("{:X?}", elf.header);
@@ -17,6 +22,22 @@ pub fn parse_elf(
         elf.entry as usize >= amd64::paging::KERNEL_VIRT_OFFSET,
         "Only higher-half kernels"
     );
+
+    let symbols = elf
+        .syms
+        .iter()
+        .map(|v| sulfur_dioxide::symbol::KernSymbol {
+            start: v.st_value as usize,
+            end: (v.st_value + v.st_size) as usize,
+            name: Box::leak(
+                elf.strtab
+                    .get_at(v.st_name)
+                    .unwrap_or("<unknown>")
+                    .to_owned()
+                    .into_boxed_str(),
+            ),
+        })
+        .collect();
 
     debug!("Parsing program headers: ");
     for phdr in elf
@@ -74,5 +95,8 @@ pub fn parse_elf(
         }
     }
 
-    unsafe { core::mem::transmute(elf.entry as *const ()) }
+    (
+        unsafe { core::mem::transmute(elf.entry as *const ()) },
+        symbols,
+    )
 }

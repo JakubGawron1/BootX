@@ -48,7 +48,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     let mut mem_mgr = helpers::mem::MemoryManager::new();
     mem_mgr.allocate((mod_buffer.as_ptr() as usize, mod_buffer.len()));
 
-    let kernel_main = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
+    let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
 
     let mut stack = Vec::new();
     stack.resize(0x14000, 0u8);
@@ -61,8 +61,8 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     let rsdp = helpers::setup::get_rsdp();
 
     let mut explosion = Box::new(sulfur_dioxide::BootInfo::new(
-        buffer,
-        sulfur_dioxide::SpecialisedSettings {
+        symbols.leak(),
+        sulfur_dioxide::settings::BootSettings {
             verbose: cfg!(debug_assertions),
         },
         Some(fbinfo),
