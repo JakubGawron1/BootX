@@ -9,8 +9,8 @@ pub fn parse_elf(
     mem_mgr: &mut super::mem::MemoryManager,
     buffer: &[u8],
 ) -> (
-    sulfur_dioxide::EntryPoint,
-    Vec<sulfur_dioxide::symbol::KernSymbol>,
+    sulphur_dioxide::EntryPoint,
+    Vec<sulphur_dioxide::symbol::KernSymbol>,
 ) {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
@@ -26,7 +26,7 @@ pub fn parse_elf(
     let symbols = elf
         .syms
         .iter()
-        .map(|v| sulfur_dioxide::symbol::KernSymbol {
+        .map(|v| sulphur_dioxide::symbol::KernSymbol {
             start: v.st_value as usize,
             end: (v.st_value + v.st_size) as usize,
             name: Box::leak(

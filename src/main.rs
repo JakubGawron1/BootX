@@ -60,17 +60,17 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     )));
     let rsdp = helpers::setup::get_rsdp();
 
-    let mut explosion = Box::new(sulfur_dioxide::BootInfo::new(
+    let mut explosion = Box::new(sulphur_dioxide::BootInfo::new(
         symbols.leak(),
-        sulfur_dioxide::settings::BootSettings {
+        sulphur_dioxide::settings::BootSettings {
             verbose: cfg!(debug_assertions),
         },
         Some(fbinfo),
         rsdp,
     ));
 
-    let modules = vec![sulfur_dioxide::module::Module::Audio(
-        sulfur_dioxide::module::ModuleInner {
+    let modules = vec![sulphur_dioxide::module::Module::Audio(
+        sulphur_dioxide::module::ModuleInner {
             name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
                 .unwrap(),
             data: helpers::phys_to_kern_slice_ref(mod_buffer),

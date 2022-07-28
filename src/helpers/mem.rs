@@ -3,7 +3,7 @@
 
 use alloc::vec::Vec;
 
-use sulfur_dioxide::memory_map::{MemoryData, MemoryEntry};
+use sulphur_dioxide::memory_map::{MemoryData, MemoryEntry};
 
 #[derive(Debug)]
 pub struct MemoryManager {

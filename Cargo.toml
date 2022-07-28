@@ -26,4 +26,4 @@ goblin = { version = "0.5.2", default-features = false, features = [
 ] }
 amd64 = { path = "../AMD64Lib" }
 acpi = { path = "../ACPILib" }
-sulfur_dioxide = { path = "../SulfurDioxide" }
+sulphur_dioxide = { path = "../SulphurDioxide" }

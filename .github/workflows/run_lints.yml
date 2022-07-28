@@ -29,8 +29,8 @@ jobs:
           path: "_work/ACPILib"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/SulfurDioxide"
-          path: "_work/SulfurDioxide"
+          repository: "BoxOperatingSystem/SulphurDioxide"
+          path: "_work/SulphurDioxide"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -62,8 +62,8 @@ jobs:
           path: "_work/ACPILib"
       - uses: actions/checkout@v2
         with:
-          repository: "BoxOperatingSystem/SulfurDioxide"
-          path: "_work/SulfurDioxide"
+          repository: "BoxOperatingSystem/SulphurDioxide"
+          path: "_work/SulphurDioxide"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
