@@ -3,22 +3,23 @@
 
 use alloc::vec::Vec;
 
-use sulphur_dioxide::memory_map::{MemoryData, MemoryEntry};
+use sulphur_dioxide::mmap::{MemoryData, MemoryEntry};
 
 #[derive(Debug)]
 pub struct MemoryManager {
-    entries: Vec<(usize, usize)>,
+    entries: Vec<(u64, u64)>,
 }
 
 impl MemoryManager {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             entries: Vec::new(),
         }
     }
 
-    pub fn allocate(&mut self, ent: (usize, usize)) {
-        self.entries.push(ent)
+    pub fn allocate(&mut self, ent: (u64, u64)) {
+        self.entries.push(ent);
     }
 
     pub fn mem_type_from_desc(
@@ -26,8 +27,8 @@ impl MemoryManager {
         desc: &uefi::table::boot::MemoryDescriptor,
     ) -> Option<MemoryEntry> {
         let mut data = MemoryData {
-            base: desc.phys_start.try_into().unwrap(),
-            length: (desc.page_count * 0x1000).try_into().unwrap(),
+            base: desc.phys_start,
+            length: desc.page_count * 0x1000,
         };
 
         match desc.ty {
@@ -38,8 +39,8 @@ impl MemoryManager {
 
                 for (base, size) in &self.entries {
                     let top = data.base + data.length;
-                    if data.base <= (base + size) {
-                        if top > (base + size) {
+                    if data.base <= base + size {
+                        if top > base + size {
                             data.length -= size;
                             data.base += size;
                             ret = MemoryEntry::BootLoaderReclaimable(data);

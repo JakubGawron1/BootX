@@ -10,7 +10,7 @@ pub fn parse_elf(
     buffer: &[u8],
 ) -> (
     sulphur_dioxide::EntryPoint,
-    Vec<sulphur_dioxide::symbol::KernSymbol>,
+    Vec<sulphur_dioxide::kern_sym::KernSymbol>,
 ) {
     let elf = goblin::elf::Elf::parse(buffer).expect("Failed to parse kernel elf");
 
@@ -19,16 +19,16 @@ pub fn parse_elf(
     assert_eq!(elf.header.e_machine, goblin::elf::header::EM_X86_64);
     assert!(elf.little_endian, "Only little-endian ELFs");
     assert!(
-        elf.entry as usize >= amd64::paging::KERNEL_VIRT_OFFSET,
+        elf.entry >= amd64::paging::KERNEL_VIRT_OFFSET,
         "Only higher-half kernels"
     );
 
     let symbols = elf
         .syms
         .iter()
-        .map(|v| sulphur_dioxide::symbol::KernSymbol {
-            start: v.st_value as usize,
-            end: (v.st_value + v.st_size) as usize,
+        .map(|v| sulphur_dioxide::kern_sym::KernSymbol {
+            start: v.st_value,
+            end: v.st_value + v.st_size,
             name: Box::leak(
                 elf.strtab
                     .get_at(v.st_name)
@@ -46,17 +46,17 @@ pub fn parse_elf(
         .filter(|phdr| phdr.p_type == goblin::elf::program_header::PT_LOAD)
     {
         assert!(
-            phdr.p_vaddr as usize >= amd64::paging::KERNEL_VIRT_OFFSET,
+            phdr.p_vaddr >= amd64::paging::KERNEL_VIRT_OFFSET,
             "Only higher-half kernels."
         );
 
-        let offset = phdr.p_offset as usize;
-        let memsz = phdr.p_memsz as usize;
-        let file_size = phdr.p_filesz as usize;
+        let offset: usize = phdr.p_offset.try_into().unwrap();
+        let memsz: usize = phdr.p_memsz.try_into().unwrap();
+        let file_size: usize = phdr.p_filesz.try_into().unwrap();
         let src = &buffer[offset..(offset + file_size)];
         let dest = unsafe {
             core::slice::from_raw_parts_mut(
-                (phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET) as *mut u8,
+                (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET) as *mut u8,
                 memsz,
             )
         };
@@ -64,7 +64,7 @@ pub fn parse_elf(
         debug!(
             "vaddr: {:#X}, paddr: {:#X}, npages: {:#X}",
             phdr.p_vaddr,
-            phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET,
+            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET,
             npages
         );
         assert_eq!(
@@ -72,26 +72,27 @@ pub fn parse_elf(
                 .boot_services()
                 .allocate_pages(
                     uefi::table::boot::AllocateType::Address(
-                        phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET,
+                        (phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET)
+                            .try_into()
+                            .unwrap(),
                     ),
                     uefi::table::boot::MemoryType::LOADER_DATA,
                     npages,
                 )
-                .expect("Failed to load section above. Sections might be misaligned.")
-                as usize,
-            phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET
+                .expect("Failed to load section above. Sections might be misaligned."),
+            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET
         );
 
         mem_mgr.allocate((
-            phdr.p_vaddr as usize - amd64::paging::KERNEL_VIRT_OFFSET,
-            npages,
+            phdr.p_vaddr - amd64::paging::KERNEL_VIRT_OFFSET,
+            npages as u64,
         ));
 
         for (a, b) in dest
             .iter_mut()
             .zip(src.iter().chain(core::iter::repeat(&0)))
         {
-            *a = *b
+            *a = *b;
         }
     }
 

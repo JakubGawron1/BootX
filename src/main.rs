@@ -3,7 +3,15 @@
 
 #![no_std]
 #![no_main]
-#![deny(warnings, unused_extern_crates, clippy::cargo, rust_2021_compatibility)]
+#![deny(
+    warnings,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo,
+    unused_extern_crates,
+    rust_2021_compatibility
+)]
+#![allow(clippy::module_name_repetitions)]
 #![feature(abi_efiapi, allocator_api, asm_const, used_with_arg)]
 
 extern crate alloc;
@@ -20,11 +28,11 @@ use uefi::{
 };
 
 #[no_mangle]
-pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) {
+extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) {
     uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
     helpers::setup::init_output();
     info!("Welcome...");
-    helpers::setup::setup_paging();
+    helpers::setup::setup();
 
     let mut esp = helpers::file::open_esp(image);
 
@@ -46,14 +54,14 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     trace!("{:#X?}", mod_buffer.as_ptr());
 
     let mut mem_mgr = helpers::mem::MemoryManager::new();
-    mem_mgr.allocate((mod_buffer.as_ptr() as usize, mod_buffer.len()));
+    mem_mgr.allocate((mod_buffer.as_ptr() as u64, mod_buffer.len() as u64));
 
     let (kernel_main, symbols) = helpers::parse_elf::parse_elf(&mut mem_mgr, buffer);
 
     let mut stack = Vec::new();
     stack.resize(0x14000, 0u8);
-    let stack = (stack.leak().as_ptr() as usize + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
-    mem_mgr.allocate((stack as usize - amd64::paging::KERNEL_VIRT_OFFSET, 0x2000));
+    let stack = (stack.leak().as_ptr() as u64 + amd64::paging::KERNEL_VIRT_OFFSET) as *const u8;
+    mem_mgr.allocate((stack as u64 - amd64::paging::KERNEL_VIRT_OFFSET, 0x2000));
 
     let fbinfo = helpers::phys_to_kern_ref(Box::leak(helpers::fb::fbinfo_from_gop(
         helpers::setup::get_gop(),
@@ -62,7 +70,7 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
 
     let mut explosion = Box::new(sulphur_dioxide::BootInfo::new(
         symbols.leak(),
-        sulphur_dioxide::settings::BootSettings {
+        sulphur_dioxide::boot_attrs::BootSettings {
             verbose: cfg!(debug_assertions),
         },
         Some(fbinfo),
@@ -70,9 +78,8 @@ pub extern "efiapi" fn efi_main(image: Handle, mut system_table: SystemTable<Boo
     ));
 
     let modules = vec![sulphur_dioxide::module::Module::Audio(
-        sulphur_dioxide::module::ModuleInner {
-            name: core::str::from_utf8(helpers::phys_to_kern_slice_ref("testaudio".as_bytes()))
-                .unwrap(),
+        sulphur_dioxide::module::ModInnerData {
+            name: core::str::from_utf8(helpers::phys_to_kern_slice_ref(b"testaudio")).unwrap(),
             data: helpers::phys_to_kern_slice_ref(mod_buffer),
         },
     )];

@@ -38,7 +38,7 @@ pub fn load(
         .unwrap()
     {
         FileType::Regular(f) => f,
-        _ => panic!("How do you expect me to load the {} folder?", path),
+        FileType::Dir(_) => panic!("How do you expect me to load the {} folder?", path),
     };
 
     let mut buffer = vec![

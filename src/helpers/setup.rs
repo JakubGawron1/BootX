@@ -21,7 +21,7 @@ pub fn init_output() {
     }
 }
 
-pub fn setup_paging() {
+pub fn setup() {
     debug!("Setting up higher-half paging mappings:");
     debug!("    1. Turning off write protection...");
 
@@ -63,6 +63,7 @@ pub fn get_rsdp() -> &'static RSDP {
             iter.find(|ent| ent.guid == uefi::table::cfg::ACPI_GUID)
                 .expect("No ACPI found on the system!")
         })
-        .address as _;
+        .address
+        .cast();
     super::phys_to_kern_ref(unsafe { &*rsdp })
 }
