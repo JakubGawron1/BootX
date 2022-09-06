@@ -5,8 +5,13 @@ authors = ["ChefKiss Inc"]
 publish = false
 edition = "2021"
 
+[profile.dev]
+lto = "thin"
+
 [profile.release]
+opt-level = 3
 lto = true
+strip = true
 
 [[bin]]
 name = "bootx64"
